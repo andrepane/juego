@@ -44,6 +44,10 @@ export default class Renderer {
     el.querySelector('.fill').style.width = `${(unit.hp / unit.maxHp) * 100}%`;
   }
 
+  setDefending(el, defending) {
+    el.classList.toggle('defending', defending);
+  }
+
   renderUnits(state) {
     if (!this.playerEl) this.playerEl = this.createUnit('player', 'P');
     if (!this.enemyEl) this.enemyEl = this.createUnit('enemy', 'E');
@@ -51,6 +55,8 @@ export default class Renderer {
     this.positionUnit(this.enemyEl, state.enemy);
     this.updateHp(this.playerEl, state.player);
     this.updateHp(this.enemyEl, state.enemy);
+    this.setDefending(this.playerEl, state.player.defending);
+    this.setDefending(this.enemyEl, state.enemy.defending);
   }
 
   clearHighlights() {
