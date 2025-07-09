@@ -3,8 +3,8 @@ export default class Game {
     this.renderer = renderer;
     this.size = 8;
     this.state = {
-      player: { x: 1, y: 1, hp: 10, maxHp: 10 },
-      enemy: { x: 6, y: 6, hp: 10, maxHp: 10 },
+      player: { x: 1, y: 1, hp: 10, maxHp: 10, defending: false },
+      enemy: { x: 6, y: 6, hp: 10, maxHp: 10, defending: false },
       turn: 'player',
       phase: 'playing'
     };
@@ -33,8 +33,18 @@ export default class Game {
     this.renderer.renderUnits(this.state);
   }
 
+  defend() {
+    if (this.state.phase !== 'playing' || this.state.turn !== 'player') return;
+    this.state.player.defending = true;
+    this.renderer.renderUnits(this.state);
+    this.renderer.log('Jugador se defiende');
+    this.endPlayerTurn();
+  }
+
   attack(attacker, defender) {
-    defender.hp -= 2;
+    const damage = defender.defending ? 1 : 2;
+    defender.defending = false;
+    defender.hp -= damage;
     if (defender.hp < 0) defender.hp = 0;
     this.renderer.renderUnits(this.state);
     this.renderer.log(`${attacker === this.state.player ? 'Jugador' : 'Enemigo'} atacó`);
@@ -50,13 +60,19 @@ export default class Game {
     const { player, enemy } = this.state;
     const dx = player.x - enemy.x;
     const dy = player.y - enemy.y;
-    if (Math.abs(dx) + Math.abs(dy) === 1) {
+    const dist = Math.abs(dx) + Math.abs(dy);
+    if (dist === 1) {
       this.attack(enemy, player);
+    } else if (enemy.hp <= 4 && Math.random() < 0.5) {
+      enemy.defending = true;
+      this.renderer.renderUnits(this.state);
+      this.renderer.log('Enemigo se defiende');
     } else {
       if (Math.abs(dx) > Math.abs(dy)) enemy.x += Math.sign(dx);
       else enemy.y += Math.sign(dy);
       this.renderer.renderUnits(this.state);
     }
+    player.defending = false;
     if (!this.checkOutcome()) {
       this.state.turn = 'player';
       this.renderer.log('Turno del jugador');

@@ -12,6 +12,10 @@ body {
   padding: 20px;
 }
 
+#controls {
+  margin-top: 10px;
+}
+
 #board {
   position: relative;
   display: grid;
@@ -48,6 +52,7 @@ body {
 
 .unit.player { background-color: #4CAF50; }
 .unit.enemy { background-color: #F44336; }
+.unit.defending { box-shadow: 0 0 0 3px #2196F3 inset; }
 
 .unit .label {
   flex: 1;
