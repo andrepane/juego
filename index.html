@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Mini Tactics JS</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruta de Circuitos</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Mini Tactics JS</h1>
-  <div id="board"></div>
-  <div id="controls">
-    <button id="defendBtn">Defender</button>
-  </div>
-  <div id="log"></div>
-  <script type="module" src="main.js"></script>
+    <h1>Ruta de Circuitos</h1>
+    <div id="game">
+        <div id="board" class="board"></div>
+        <div id="ui">
+            <button id="checkBtn">Verificar conexión</button>
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
