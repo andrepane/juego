@@ -30,7 +30,7 @@ export default class Renderer {
   createUnit(type, label) {
     const el = document.createElement('div');
     el.classList.add('unit', type);
-      el.innerHTML = "<div class="label">" + label + "</div><div class="hp-bar"><div class="fill"></div></div>";
+    el.innerHTML = `<div class="label">${label}</div><div class="hp-bar"><div class="fill"></div></div>`;
     this.boardEl.appendChild(el);
     return el;
   }
