@@ -54,6 +54,17 @@ h1 {
     cursor: default;
 }
 
+.cell.locked {
+    background: #eee;
+    cursor: default;
+}
+
+.cell.blocked {
+    background: #333;
+    color: #fff;
+    cursor: default;
+}
+
 #message {
     margin-top: 10px;
     min-height: 20px;

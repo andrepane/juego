@@ -1,5 +1,5 @@
 import { PIECES, CONNECTIONS, opposite } from './utils.js';
-import { levels, createBoard } from './board.js';
+import { getLevel, createBoard } from './board.js';
 
 const boardEl = document.getElementById('board');
 const messageEl = document.getElementById('message');
@@ -17,12 +17,7 @@ function init() {
 }
 
 function loadLevel(index) {
-    const level = levels[index];
-    if (!level) {
-        messageEl.textContent = '¡Has completado todos los niveles!';
-        boardEl.innerHTML = '';
-        return;
-    }
+    const level = getLevel(index);
     boardEl.classList.remove('success', 'fail');
     messageEl.textContent = '';
     createBoard(boardEl, state, level);
@@ -30,7 +25,13 @@ function loadLevel(index) {
 
 function handleCellClick(e) {
     const cell = e.target.closest('.cell');
-    if (!cell || cell.classList.contains('start') || cell.classList.contains('end')) {
+    if (
+        !cell ||
+        cell.classList.contains('start') ||
+        cell.classList.contains('end') ||
+        cell.classList.contains('locked') ||
+        cell.classList.contains('blocked')
+    ) {
         return;
     }
     const r = parseInt(cell.dataset.row);
@@ -49,8 +50,7 @@ function inBounds(row, col) {
 }
 
 function verify() {
-    const level = levels[state.levelIndex];
-    if (!level) return;
+    const level = getLevel(state.levelIndex);
     const visited = new Set();
     let pos = { row: level.start.row, col: level.start.col };
     let dir = level.start.dir;
@@ -70,7 +70,7 @@ function verify() {
         if (!piece) return fail();
         const connectors = CONNECTIONS[piece];
         const needed = opposite(dir);
-        if (!connectors.includes(needed)) return fail();
+        if (!connectors || !connectors.includes(needed)) return fail();
         dir = connectors[0] === needed ? connectors[1] : connectors[0];
         pos = next;
     }
