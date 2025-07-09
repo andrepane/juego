@@ -1,4 +1,4 @@
-export const PIECES = ['', '─', '│', '┐', '└', '┘', '┌'];
+export const PIECES = ['', '─', '│', '┐', '└', '┘', '┌', '❌'];
 
 export const CONNECTIONS = {
     '─': ['left', 'right'],
