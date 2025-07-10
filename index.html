@@ -1,21 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ruta de Circuitos</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Robbie Prototipo</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <h1>Ruta de Circuitos</h1>
-    <div id="game">
-        <div id="board" class="board"></div>
-        <div id="ui">
-            <button id="checkBtn">Verificar conexión</button>
-            <div id="message"></div>
-        </div>
-    </div>
+  <h1>Robbie el Robot</h1>
+  <div id="game-board"></div>
 
-    <script type="module" src="js/game.js"></script>
+  <div id="commands">
+    <button onclick="addCommand('forward')">Avanzar</button>
+    <button onclick="addCommand('turn')">Girar</button>
+    <button onclick="runCommands()">Ejecutar</button>
+    <button onclick="resetGame()">Reiniciar</button>
+    <div id="command-list"></div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
