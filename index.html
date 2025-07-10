@@ -3,21 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Robbie Prototipo</title>
+  <title>Robbie el Robot</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Robbie el Robot</h1>
+  <div id="level-info"></div>
   <div id="game-board"></div>
 
   <div id="commands">
     <button onclick="addCommand('forward')">Avanzar</button>
     <button onclick="addCommand('turn')">Girar</button>
+    <button onclick="addCommand('wait')">Esperar</button>
+    <button onclick="addCommand('jump')">Salto</button>
     <button onclick="runCommands()">Ejecutar</button>
     <button onclick="resetGame()">Reiniciar</button>
     <div id="command-list"></div>
   </div>
 
-  <script src="script.js"></script>
+  <script src="levels.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
