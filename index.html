@@ -3,19 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Robbie Prototipo</title>
+  <title>Logopedia Interactiva</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Robbie el Robot</h1>
-  <div id="game-board"></div>
+  <div class="app">
+    <header class="app-header">
+      <p class="eyebrow">Logopedia interactiva</p>
+      <h1>Conciencia silábica</h1>
+      <p class="subtitle">
+        Ejercicios dinámicos para trabajar segmentación silábica.
+      </p>
+    </header>
 
-  <div id="commands">
-    <button onclick="addCommand('forward')">Avanzar</button>
-    <button onclick="addCommand('turn')">Girar</button>
-    <button onclick="runCommands()">Ejecutar</button>
-    <button onclick="resetGame()">Reiniciar</button>
-    <div id="command-list"></div>
+    <main class="main-layout">
+      <section class="panel">
+        <h2>Elige un ejercicio</h2>
+
+        <div class="exercise-menu">
+          <button class="exercise-card is-active" data-exercise="count">
+            <span>1</span>
+            Contar sílabas
+          </button>
+
+          <button class="exercise-card" data-exercise="initial">
+            <span>2</span>
+            Sílaba inicial
+          </button>
+
+          <button class="exercise-card" data-exercise="order">
+            <span>3</span>
+            Ordenar sílabas
+          </button>
+        </div>
+      </section>
+
+      <section class="panel exercise-panel">
+        <div class="exercise-top">
+          <div>
+            <p id="exercise-type" class="eyebrow">Ejercicio</p>
+            <h2 id="exercise-title">Contar sílabas</h2>
+          </div>
+
+          <div class="score-box">
+            <span>Aciertos</span>
+            <strong id="score">0</strong>
+          </div>
+        </div>
+
+        <div id="exercise-container" class="exercise-container"></div>
+
+        <div class="actions">
+          <button id="check-btn" class="primary-btn">Comprobar</button>
+          <button id="next-btn" class="secondary-btn">Siguiente</button>
+        </div>
+
+        <p id="feedback" class="feedback" aria-live="polite"></p>
+      </section>
+    </main>
   </div>
 
   <script src="script.js"></script>
