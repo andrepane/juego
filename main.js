@@ -1,6 +1,8 @@
 import { createExerciseEngine } from './src/core/exerciseEngine.js';
 import { state, resetAnswerState } from './src/core/state.js';
 import { renderExerciseMeta, renderQuestionUI, setFeedback } from './src/ui/render.js';
+import { WORDS } from './src/data/words/index.js';
+import { validateWords } from './src/core/validateWords.js';
 
 const EXERCISES = {
   count: { title: 'Contar sílabas', type: 'Conciencia silábica' },
@@ -68,6 +70,7 @@ function initEvents() {
 }
 
 function initApp() {
+  validateWords(WORDS);
   engine.setDifficulty(1);
   initEvents();
   generateNewRound();
