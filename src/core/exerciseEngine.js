@@ -1,16 +1,15 @@
-import { WORDS } from '../data/words.js';
 import { createCountSyllablesExercise } from '../exercises/countSyllables.js';
 import { createInitialSyllableExercise } from '../exercises/initialSyllable.js';
 import { createOrderSyllablesExercise } from '../exercises/orderSyllables.js';
-import { getRandomWord } from './utils.js';
+import { getAllWords, getFilteredWords, getRandomWord } from './wordUtils.js';
 
 const EXERCISE_BUILDERS = {
   count: (word) => createCountSyllablesExercise(word),
-  initial: (word) => createInitialSyllableExercise(word, WORDS),
+  initial: (word) => createInitialSyllableExercise(word),
   order: (word) => createOrderSyllablesExercise(word)
 };
 
-export function createExerciseEngine(words = WORDS) {
+export function createExerciseEngine() {
   const engineState = {
     score: 0,
     currentDifficulty: 1,
@@ -22,7 +21,8 @@ export function createExerciseEngine(words = WORDS) {
   }
 
   function generateRound(exerciseId) {
-    const word = getRandomWord(words, { difficulty: engineState.currentDifficulty });
+    const filteredWords = getFilteredWords({ difficulty: engineState.currentDifficulty });
+    const word = getRandomWord(filteredWords) ?? getRandomWord(getAllWords());
     const exerciseData = EXERCISE_BUILDERS[exerciseId](word);
 
     engineState.currentRound = {

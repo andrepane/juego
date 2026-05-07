@@ -1,4 +1,5 @@
-import { createOption, shuffleArray } from '../core/utils.js';
+import { createOption } from '../core/utils.js';
+import { shuffleArray } from '../core/wordUtils.js';
 
 export function createOrderSyllablesExercise(word) {
   const shuffled = shuffleArray(word.syllables);

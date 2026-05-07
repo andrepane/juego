@@ -1,7 +1,8 @@
-import { createOption, shuffleArray } from '../core/utils.js';
+import { createOption } from '../core/utils.js';
+import { getAllWords, shuffleArray } from '../core/wordUtils.js';
 
-export function createInitialSyllableExercise(word, words) {
-  const distractors = [...new Set(words.flatMap((item) => item.syllables))].filter(
+export function createInitialSyllableExercise(word) {
+  const distractors = [...new Set(getAllWords().flatMap((item) => item.syllables))].filter(
     (syllable) => syllable !== word.initialSyllable
   );
 
