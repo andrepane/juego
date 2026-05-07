@@ -7,7 +7,8 @@ export const WORDS = [
     initialSyllable: 'ca',
     finalSyllable: 'sa',
     difficulty: 1,
-    category: 'hogar'
+    category: 'hogar',
+    structure: 'CV-CV'
   },
   {
     id: 'w2',
@@ -17,7 +18,8 @@ export const WORDS = [
     initialSyllable: 'me',
     finalSyllable: 'sa',
     difficulty: 1,
-    category: 'hogar'
+    category: 'hogar',
+    structure: 'CV-CV'
   },
   {
     id: 'w3',
@@ -27,7 +29,8 @@ export const WORDS = [
     initialSyllable: 'sa',
     finalSyllable: 'po',
     difficulty: 1,
-    category: 'animales'
+    category: 'animales',
+    structure: 'CV-CV'
   },
   {
     id: 'w4',
@@ -37,7 +40,8 @@ export const WORDS = [
     initialSyllable: 'pe',
     finalSyllable: 'ta',
     difficulty: 2,
-    category: 'objetos'
+    category: 'juguetes',
+    structure: 'CV-CV-CV'
   },
   {
     id: 'w5',
@@ -47,7 +51,8 @@ export const WORDS = [
     initialSyllable: 'ca',
     finalSyllable: 'no',
     difficulty: 2,
-    category: 'lugares'
+    category: 'lugares',
+    structure: 'CV-CV-CV'
   },
   {
     id: 'w6',
@@ -57,7 +62,8 @@ export const WORDS = [
     initialSyllable: 'za',
     finalSyllable: 'to',
     difficulty: 2,
-    category: 'ropa'
+    category: 'ropa',
+    structure: 'CV-CV-CV'
   },
   {
     id: 'w7',
@@ -67,7 +73,8 @@ export const WORDS = [
     initialSyllable: 'ma',
     finalSyllable: 'sa',
     difficulty: 3,
-    category: 'animales'
+    category: 'animales',
+    structure: 'CV-CV-CV-CV'
   },
   {
     id: 'w8',
@@ -77,7 +84,8 @@ export const WORDS = [
     initialSyllable: 'ca',
     finalSyllable: 'lo',
     difficulty: 3,
-    category: 'alimentos'
+    category: 'alimentos',
+    structure: 'CV-CV-CV-CV'
   },
   {
     id: 'w9',
@@ -86,7 +94,8 @@ export const WORDS = [
     syllableCount: 5,
     initialSyllable: 'he',
     finalSyllable: 'ro',
-    difficulty: 4,
-    category: 'transporte'
+    difficulty: 3,
+    category: 'transporte',
+    structure: 'CV-CV-CVC-CV-CV'
   }
 ];

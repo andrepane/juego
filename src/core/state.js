@@ -1,9 +1,7 @@
 export const state = {
   currentExercise: 'count',
-  currentWord: null,
   selectedAnswer: null,
-  orderedSyllables: [],
-  score: 0
+  orderedSyllables: []
 };
 
 export function resetAnswerState() {
