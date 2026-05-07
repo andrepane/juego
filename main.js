@@ -1,9 +1,5 @@
+import { createExerciseEngine } from './src/core/exerciseEngine.js';
 import { state, resetAnswerState } from './src/core/state.js';
-import { getRandomItem } from './src/core/utils.js';
-import { WORDS } from './src/data/words.js';
-import { createCountSyllablesExercise } from './src/exercises/countSyllables.js';
-import { createInitialSyllableExercise } from './src/exercises/initialSyllable.js';
-import { createOrderSyllablesExercise } from './src/exercises/orderSyllables.js';
 import { renderExerciseMeta, renderQuestionUI, setFeedback } from './src/ui/render.js';
 
 const EXERCISES = {
@@ -23,43 +19,28 @@ const refs = {
   score: document.querySelector('#score')
 };
 
+const engine = createExerciseEngine();
 let currentExerciseData = null;
-
-function buildExerciseData() {
-  if (state.currentExercise === 'count') {
-    return createCountSyllablesExercise(state.currentWord);
-  }
-
-  if (state.currentExercise === 'initial') {
-    return createInitialSyllableExercise(state.currentWord, WORDS);
-  }
-
-  return createOrderSyllablesExercise(state.currentWord);
-}
 
 function generateNewRound() {
   resetAnswerState();
   setFeedback(refs, '', '');
-  state.currentWord = getRandomItem(WORDS);
 
   renderExerciseMeta(refs, EXERCISES[state.currentExercise]);
 
-  currentExerciseData = buildExerciseData();
+  const round = engine.generateRound(state.currentExercise);
+  currentExerciseData = round.exerciseData;
   renderQuestionUI({ refs, exerciseData: currentExerciseData, state });
 }
 
 function checkAnswer() {
-  let userAnswer = state.selectedAnswer;
+  const userAnswer =
+    state.currentExercise === 'order' ? state.orderedSyllables.join('-') : state.selectedAnswer;
 
-  if (state.currentExercise === 'order') {
-    userAnswer = state.orderedSyllables.join('-');
-  }
+  const result = engine.validateAnswer(userAnswer);
 
-  const isCorrect = userAnswer === currentExerciseData.correctAnswer;
-
-  if (isCorrect) {
-    state.score += 1;
-    refs.score.textContent = state.score;
+  if (result.isCorrect) {
+    refs.score.textContent = result.score;
     setFeedback(refs, 'Correcto. Muy bien.', 'success');
     return;
   }
@@ -87,6 +68,7 @@ function initEvents() {
 }
 
 function initApp() {
+  engine.setDifficulty(1);
   initEvents();
   generateNewRound();
 }

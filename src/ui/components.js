@@ -39,8 +39,8 @@ export function createOptionsGrid(options) {
     grid.appendChild(
       createButton({
         className: 'option-btn',
-        label: option,
-        value: option
+        label: option.label,
+        value: option.id
       })
     );
   });

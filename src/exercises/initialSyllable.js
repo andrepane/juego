@@ -1,21 +1,21 @@
-import { shuffleArray } from '../core/utils.js';
+import { createOption, shuffleArray } from '../core/utils.js';
 
 export function createInitialSyllableExercise(word, words) {
-  const distractors = words
-    .flatMap((item) => item.syllables)
-    .filter((syllable) => syllable !== word.initialSyllable);
+  const distractors = [...new Set(words.flatMap((item) => item.syllables))].filter(
+    (syllable) => syllable !== word.initialSyllable
+  );
 
-  const options = shuffleArray([
-    word.initialSyllable,
-    ...shuffleArray(distractors).slice(0, 3)
-  ]);
+  const selectedOptions = shuffleArray([word.initialSyllable, ...shuffleArray(distractors).slice(0, 2)]);
+  const options = selectedOptions.map((value, index) => createOption(String.fromCharCode(97 + index), value));
+  const correctOption = options.find((option) => option.label === word.initialSyllable);
 
   return {
     type: 'multiple-choice',
-    question: '¿Por qué sílaba empieza?',
+    title: '¿Por qué sílaba empieza?',
+    prompt: 'Selecciona la sílaba inicial correcta',
+    word: { text: word.word, id: word.id },
     options,
-    correctAnswer: word.initialSyllable,
-    word,
+    correctAnswer: correctOption.id,
     exerciseId: 'initial'
   };
 }

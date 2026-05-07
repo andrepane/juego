@@ -12,18 +12,15 @@ export function setFeedback(refs, message, type) {
 
 export function renderQuestionUI({ refs, exerciseData, state }) {
   refs.exerciseContainer.innerHTML = '';
-  refs.exerciseContainer.appendChild(
-    createWordCard({ label: exerciseData.question, word: exerciseData.word.word })
-  );
+  refs.exerciseContainer.appendChild(createWordCard({ label: exerciseData.prompt, word: exerciseData.word.text }));
 
   if (exerciseData.type === 'multiple-choice') {
     refs.exerciseContainer.appendChild(createOptionsGrid(exerciseData.options));
     bindOptionButtons(refs, state);
+    return;
   }
 
-  if (exerciseData.type === 'order-syllables') {
-    renderOrderSyllablesLayout({ refs, exerciseData, state });
-  }
+  renderOrderSyllablesLayout({ refs, exerciseData, state });
 }
 
 function bindOptionButtons(refs, state) {
@@ -48,11 +45,11 @@ function renderOrderSyllablesLayout({ refs, exerciseData, state }) {
   syllableBank.className = 'syllable-bank';
   syllableBank.id = 'syllable-bank';
 
-  exerciseData.options.forEach((syllable, index) => {
+  exerciseData.options.forEach((option) => {
     const syllableButton = createButton({
       className: 'syllable-btn',
-      label: syllable,
-      dataset: { syllable, index }
+      label: option.label,
+      dataset: { syllable: option.label, optionId: option.id }
     });
     syllableBank.appendChild(syllableButton);
   });
