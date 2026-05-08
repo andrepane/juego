@@ -7,6 +7,7 @@ export const level1Food = [
     initialSyllable: "so",
     finalSyllable: "pa",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV",
     image: null
@@ -19,6 +20,7 @@ export const level1Food = [
     initialSyllable: "pa",
     finalSyllable: "pa",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV",
     image: null
@@ -31,6 +33,7 @@ export const level1Food = [
     initialSyllable: "que",
     finalSyllable: "so",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV",
     image: null
@@ -43,6 +46,7 @@ export const level1Food = [
     initialSyllable: "man",
     finalSyllable: "go",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CVC-CV",
     image: null
@@ -55,6 +59,7 @@ export const level1Food = [
     initialSyllable: "me",
     finalSyllable: "lón",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CV-CVC",
     image: null
@@ -68,6 +73,7 @@ export const level1Food = [
     initialSyllable: "tar",
     finalSyllable: "ta",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CVC-CV",
     image: null
@@ -80,6 +86,7 @@ export const level1Food = [
     initialSyllable: "ga",
     finalSyllable: "ta",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV-CV",
     image: null
@@ -92,6 +99,7 @@ export const level1Food = [
     initialSyllable: "to",
     finalSyllable: "te",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV-CV",
     image: null
@@ -104,6 +112,7 @@ export const level1Food = [
     initialSyllable: "pa",
     finalSyllable: "ta",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CV-CV-CV",
     image: null
@@ -116,6 +125,7 @@ export const level1Food = [
     initialSyllable: "gui",
     finalSyllable: "so",
     difficulty: 1,
+    frequency: 3,
     category: "comida",
     structure: "CVV-CV",
     image: null
@@ -129,6 +139,7 @@ export const level1Food = [
     initialSyllable: "fre",
     finalSyllable: "sa",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CCV-CV",
     image: null
@@ -141,6 +152,7 @@ export const level1Food = [
     initialSyllable: "plá",
     finalSyllable: "no",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CCV-CV-CV",
     image: null
@@ -153,6 +165,7 @@ export const level1Food = [
     initialSyllable: "na",
     finalSyllable: "ja",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CVC-CV",
     image: null
@@ -165,6 +178,7 @@ export const level1Food = [
     initialSyllable: "man",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CVC-CV-CV",
     image: null
@@ -177,6 +191,7 @@ export const level1Food = [
     initialSyllable: "pe",
     finalSyllable: "ra",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV",
     image: null
@@ -190,6 +205,7 @@ export const level1Food = [
     initialSyllable: "ki",
     finalSyllable: "wi",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CV-CV",
     image: null
@@ -202,6 +218,7 @@ export const level1Food = [
     initialSyllable: "li",
     finalSyllable: "món",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CV-CVC",
     image: null
@@ -214,6 +231,7 @@ export const level1Food = [
     initialSyllable: "ha",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 3,
     category: "comida",
     structure: "CV-CV-CV",
     image: null
@@ -226,6 +244,7 @@ export const level1Food = [
     initialSyllable: "ga",
     finalSyllable: "ta",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV-CV",
     image: null
@@ -238,6 +257,7 @@ export const level1Food = [
     initialSyllable: "chu",
     finalSyllable: "rro",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CV-CV",
     image: null
@@ -251,6 +271,7 @@ export const level1Food = [
     initialSyllable: "pes",
     finalSyllable: "do",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CVC-CV-CV",
     image: null
@@ -263,6 +284,7 @@ export const level1Food = [
     initialSyllable: "yo",
     finalSyllable: "gur",
     difficulty: 1,
+    frequency: 2,
     category: "comida",
     structure: "CV-CVC",
     image: null
@@ -275,6 +297,7 @@ export const level1Food = [
     initialSyllable: "he",
     finalSyllable: "do",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CV-CV-CV",
     image: null
@@ -287,6 +310,7 @@ export const level1Food = [
     initialSyllable: "pan",
     finalSyllable: "pan",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "CVC",
     image: null
@@ -299,6 +323,7 @@ export const level1Food = [
     initialSyllable: "a",
     finalSyllable: "rroz",
     difficulty: 1,
+    frequency: 1,
     category: "comida",
     structure: "V-CCVC",
     image: null

@@ -7,6 +7,7 @@ export const level1Animals = [
     initialSyllable: "pa",
     finalSyllable: "to",
     difficulty: 1,
+    frequency: 1,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -19,6 +20,7 @@ export const level1Animals = [
     initialSyllable: "ga",
     finalSyllable: "to",
     difficulty: 1,
+    frequency: 1,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -31,6 +33,7 @@ export const level1Animals = [
     initialSyllable: "mo",
     finalSyllable: "no",
     difficulty: 1,
+    frequency: 1,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -43,6 +46,7 @@ export const level1Animals = [
     initialSyllable: "sa",
     finalSyllable: "po",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -55,6 +59,7 @@ export const level1Animals = [
     initialSyllable: "lo",
     finalSyllable: "bo",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -67,6 +72,7 @@ export const level1Animals = [
     initialSyllable: "va",
     finalSyllable: "ca",
     difficulty: 1,
+    frequency: 1,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -79,6 +85,7 @@ export const level1Animals = [
     initialSyllable: "fo",
     finalSyllable: "ca",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -91,6 +98,7 @@ export const level1Animals = [
     initialSyllable: "ra",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 1,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -103,6 +111,7 @@ export const level1Animals = [
     initialSyllable: "pu",
     finalSyllable: "ma",
     difficulty: 1,
+    frequency: 3,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -115,6 +124,7 @@ export const level1Animals = [
     initialSyllable: "fo",
     finalSyllable: "ca",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -128,6 +138,7 @@ export const level1Animals = [
     initialSyllable: "co",
     finalSyllable: "jo",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV-CV",
     image: null
@@ -140,6 +151,7 @@ export const level1Animals = [
     initialSyllable: "o",
     finalSyllable: "ja",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "V-CV-CV",
     image: null
@@ -152,6 +164,7 @@ export const level1Animals = [
     initialSyllable: "ba",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 3,
     category: "animales",
     structure: "CV-CV-CV",
     image: null
@@ -164,6 +177,7 @@ export const level1Animals = [
     initialSyllable: "ma",
     finalSyllable: "sa",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV-CV-CV",
     image: null
@@ -176,6 +190,7 @@ export const level1Animals = [
     initialSyllable: "gu",
     finalSyllable: "no",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV-CV",
     image: null
@@ -188,6 +203,7 @@ export const level1Animals = [
     initialSyllable: "pa",
     finalSyllable: "ma",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV-CV",
     image: null
@@ -200,6 +216,7 @@ export const level1Animals = [
     initialSyllable: "tor",
     finalSyllable: "ga",
     difficulty: 1,
+    frequency: 3,
     category: "animales",
     structure: "CVC-CV-CV",
     image: null
@@ -212,6 +229,7 @@ export const level1Animals = [
     initialSyllable: "ca",
     finalSyllable: "llo",
     difficulty: 1,
+    frequency: 3,
     category: "animales",
     structure: "CV-CV-CV",
     image: null
@@ -224,6 +242,7 @@ export const level1Animals = [
     initialSyllable: "po",
     finalSyllable: "to",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV-CV",
     image: null
@@ -236,6 +255,7 @@ export const level1Animals = [
     initialSyllable: "a",
     finalSyllable: "ja",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "V-CV-CV",
     image: null
@@ -249,6 +269,7 @@ export const level1Animals = [
     initialSyllable: "bu",
     finalSyllable: "rro",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-CV",
     image: null
@@ -261,6 +282,7 @@ export const level1Animals = [
     initialSyllable: "ce",
     finalSyllable: "bra",
     difficulty: 1,
+    frequency: 3,
     category: "animales",
     structure: "CV-CCV",
     image: null
@@ -273,6 +295,7 @@ export const level1Animals = [
     initialSyllable: "ti",
     finalSyllable: "gre",
     difficulty: 1,
+    frequency: 3,
     category: "animales",
     structure: "CV-CCV",
     image: null
@@ -285,6 +308,7 @@ export const level1Animals = [
     initialSyllable: "le",
     finalSyllable: "ón",
     difficulty: 1,
+    frequency: 2,
     category: "animales",
     structure: "CV-VC",
     image: null
@@ -297,6 +321,7 @@ export const level1Animals = [
     initialSyllable: "ra",
     finalSyllable: "tón",
     difficulty: 1,
+    frequency: 1,
     category: "animales",
     structure: "CV-CVC",
     image: null

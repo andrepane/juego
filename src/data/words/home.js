@@ -7,6 +7,7 @@ export const level1Home = [
     initialSyllable: "ca",
     finalSyllable: "sa",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CV",
     image: null
@@ -19,6 +20,7 @@ export const level1Home = [
     initialSyllable: "me",
     finalSyllable: "sa",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CV",
     image: null
@@ -31,6 +33,7 @@ export const level1Home = [
     initialSyllable: "ca",
     finalSyllable: "ma",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CV",
     image: null
@@ -43,6 +46,7 @@ export const level1Home = [
     initialSyllable: "si",
     finalSyllable: "lla",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CV",
     image: null
@@ -55,6 +59,7 @@ export const level1Home = [
     initialSyllable: "ta",
     finalSyllable: "za",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CV",
     image: null
@@ -68,6 +73,7 @@ export const level1Home = [
     initialSyllable: "ca",
     finalSyllable: "ja",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CV",
     image: null
@@ -80,6 +86,7 @@ export const level1Home = [
     initialSyllable: "puer",
     finalSyllable: "ta",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CVVC-CV",
     image: null
@@ -92,6 +99,7 @@ export const level1Home = [
     initialSyllable: "te",
     finalSyllable: "cho",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-CV",
     image: null
@@ -104,6 +112,7 @@ export const level1Home = [
     initialSyllable: "sue",
     finalSyllable: "lo",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CVV-CV",
     image: null
@@ -116,6 +125,7 @@ export const level1Home = [
     initialSyllable: "lám",
     finalSyllable: "ra",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CVC-CV-CV",
     image: null
@@ -129,6 +139,7 @@ export const level1Home = [
     initialSyllable: "ven",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CVC-CV-CV",
     image: null
@@ -141,6 +152,7 @@ export const level1Home = [
     initialSyllable: "co",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CV-CV",
     image: null
@@ -153,6 +165,7 @@ export const level1Home = [
     initialSyllable: "cor",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CVC-CV-CV",
     image: null
@@ -165,6 +178,7 @@ export const level1Home = [
     initialSyllable: "ar",
     finalSyllable: "rio",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "VC-CV-CVV",
     image: null
@@ -177,6 +191,7 @@ export const level1Home = [
     initialSyllable: "es",
     finalSyllable: "jo",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "VC-CV-CV",
     image: null
@@ -190,6 +205,7 @@ export const level1Home = [
     initialSyllable: "al",
     finalSyllable: "bra",
     difficulty: 1,
+    frequency: 3,
     category: "hogar",
     structure: "VC-CVC-CCV",
     image: null
@@ -202,6 +218,7 @@ export const level1Home = [
     initialSyllable: "co",
     finalSyllable: "jín",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-CVC",
     image: null
@@ -214,6 +231,7 @@ export const level1Home = [
     initialSyllable: "sá",
     finalSyllable: "na",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-CV-CV",
     image: null
@@ -226,6 +244,7 @@ export const level1Home = [
     initialSyllable: "to",
     finalSyllable: "lla",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-V-CV",
     image: null
@@ -238,6 +257,7 @@ export const level1Home = [
     initialSyllable: "ja",
     finalSyllable: "bón",
     difficulty: 1,
+    frequency: 1,
     category: "hogar",
     structure: "CV-CVC",
     image: null
@@ -251,6 +271,7 @@ export const level1Home = [
     initialSyllable: "ba",
     finalSyllable: "ra",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-CV-CV",
     image: null
@@ -263,6 +284,7 @@ export const level1Home = [
     initialSyllable: "es",
     finalSyllable: "fa",
     difficulty: 1,
+    frequency: 3,
     category: "hogar",
     structure: "VC-CV-CV",
     image: null
@@ -275,6 +297,7 @@ export const level1Home = [
     initialSyllable: "ce",
     finalSyllable: "llo",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-CV-CV",
     image: null
@@ -287,6 +310,7 @@ export const level1Home = [
     initialSyllable: "cu",
     finalSyllable: "ra",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-CV-CV",
     image: null
@@ -299,6 +323,7 @@ export const level1Home = [
     initialSyllable: "te",
     finalSyllable: "dor",
     difficulty: 1,
+    frequency: 2,
     category: "hogar",
     structure: "CV-CV-CVC",
     image: null
