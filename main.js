@@ -31,8 +31,10 @@ const POSITION_PATTERNS = {
 };
 
 const router = createRouter({
-  homeScreen: refs.homeScreen,
-  exerciseScreen: refs.exerciseScreen
+  views: {
+    home: refs.homeScreen,
+    exercise: refs.exerciseScreen
+  }
 });
 
 function setFeedback(message, type = '') {

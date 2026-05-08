@@ -1,17 +1,36 @@
-const SCREENS = {
+const VIEWS = {
   home: 'home',
   exercise: 'exercise'
 };
 
-export function createRouter({ homeScreen, exerciseScreen }) {
-  function show(screen) {
-    const showHome = screen === SCREENS.home;
-    homeScreen.classList.toggle('is-hidden', !showHome);
-    exerciseScreen.classList.toggle('is-hidden', showHome);
+export function createRouter({ views, initialView = VIEWS.home }) {
+  let currentView = initialView;
+
+  function render(view) {
+    currentView = view;
+
+    Object.entries(views).forEach(([viewId, node]) => {
+      const isActive = viewId === view;
+      node.hidden = !isActive;
+      node.classList.toggle('is-active-view', isActive);
+    });
   }
 
+  function goTo(view) {
+    if (!views[view]) {
+      return;
+    }
+
+    render(view);
+  }
+
+  render(initialView);
+
   return {
-    showHome: () => show(SCREENS.home),
-    showExercise: () => show(SCREENS.exercise)
+    goTo,
+    showHome: () => goTo(VIEWS.home),
+    showExercise: () => goTo(VIEWS.exercise),
+    getCurrentView: () => currentView,
+    views: VIEWS
   };
 }
