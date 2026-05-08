@@ -3,44 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ordenar sílabas</title>
+  <title>TITULO</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
-    <header class="app-header panel">
-      <p class="eyebrow">Ejercicio base de plataforma</p>
-      <h1>Ordenar sílabas</h1>
-      <p class="subtitle">Toca las sílabas en orden para construir la palabra.</p>
-    </header>
+    <section id="home-screen" class="panel home-screen">
+      <p class="eyebrow">Plataforma educativa</p>
+      <h1>TITULO</h1>
+      <p class="subtitle">Una experiencia interactiva para practicar habilidades lingüísticas con ejercicios breves, claros y progresivos.</p>
 
-    <main class="panel exercise-panel">
-      <div class="exercise-top">
-        <div>
-          <p class="eyebrow" id="level-label">Nivel 1</p>
-          <h2 id="round-word">2 sílabas</h2>
+      <nav class="exercise-menu" aria-label="Menú de ejercicios">
+        <button type="button" class="exercise-card" data-exercise="order-syllables">
+          <strong>Ordenar sílabas</strong>
+          <span>Organiza sílabas para formar palabras correctamente.</span>
+        </button>
+      </nav>
+    </section>
+
+    <section id="exercise-screen" class="exercise-screen is-hidden">
+      <header class="app-header panel">
+        <div class="header-top-row">
+          <button id="home-btn" class="back-btn" type="button" aria-label="Volver a la portada">Inicio</button>
+          <p class="eyebrow">Ejercicio base de plataforma</p>
+        </div>
+        <h1>Ordenar sílabas</h1>
+        <p class="subtitle">Toca las sílabas en orden para construir la palabra.</p>
+      </header>
+
+      <main class="panel exercise-panel">
+        <div class="exercise-top">
+          <div>
+            <p class="eyebrow" id="level-label">Nivel 1</p>
+            <h2 id="round-word">2 sílabas</h2>
+          </div>
+
+          <div class="score-box">
+            <span>Aciertos</span>
+            <strong id="score">0</strong>
+          </div>
         </div>
 
-        <div class="score-box">
-          <span>Aciertos</span>
-          <strong id="score">0</strong>
+        <div class="level-tabs">
+          <button class="level-btn is-active" data-level="1">Nivel 1</button>
+          <button class="level-btn" data-level="2">Nivel 2</button>
+          <button class="level-btn" data-level="3">Nivel 3</button>
         </div>
-      </div>
 
-      <div class="level-tabs">
-        <button class="level-btn is-active" data-level="1">Nivel 1</button>
-        <button class="level-btn" data-level="2">Nivel 2</button>
-        <button class="level-btn" data-level="3">Nivel 3</button>
-      </div>
+        <div id="exercise-container" class="exercise-container"></div>
 
-      <div id="exercise-container" class="exercise-container"></div>
+        <div class="actions">
+          <button id="next-btn" class="secondary-btn">Nueva palabra</button>
+        </div>
 
-      <div class="actions">
-        <button id="next-btn" class="secondary-btn">Nueva palabra</button>
-      </div>
-
-      <p id="feedback" class="feedback" aria-live="polite"></p>
-    </main>
+        <p id="feedback" class="feedback" aria-live="polite"></p>
+      </main>
+    </section>
   </div>
 
   <script type="module" src="main.js"></script>

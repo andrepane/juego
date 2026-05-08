@@ -17,6 +17,27 @@ body { margin:0; font-family: system-ui,sans-serif; background: linear-gradient(
 .eyebrow { margin:0 0 6px; font-size:.8rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); font-weight:800; }
 h1,h2 { margin:0; }
 .subtitle { margin:8px 0 0; color:var(--muted); }
+.is-hidden { display: none; }
+
+.home-screen { display: grid; gap: 18px; }
+.exercise-menu { display: grid; gap: 10px; }
+.exercise-card {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  padding: 14px 16px;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+}
+.exercise-card strong { font-size: 1rem; }
+.exercise-card span { color: var(--muted); font-size: .92rem; }
+
+.exercise-screen { display: grid; gap: 16px; }
+.header-top-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.back-btn { border:1px solid var(--line); background:#fff; border-radius:999px; min-height:38px; padding:0 14px; font-weight:700; }
+
 .exercise-top { display:flex; justify-content:space-between; align-items:center; }
 .score-box { background:var(--surface-soft); border-radius:14px; padding:8px 14px; text-align:center; }
 .level-tabs { display:flex; gap:8px; margin:18px 0; flex-wrap:wrap; }
@@ -51,4 +72,7 @@ h1,h2 { margin:0; }
 .feedback.is-error { color:var(--error); }
 @keyframes shake { 25%{transform:translateX(-4px)} 50%{transform:translateX(4px)} 100%{transform:translateX(0)} }
 @keyframes pulse { 50%{transform:scale(1.04)} }
-@media (max-width: 640px) { .syllable-piece { min-width:72px; font-size:1.05rem; } }
+@media (max-width: 640px) {
+  .syllable-piece { min-width:72px; font-size:1.05rem; }
+  .panel { padding: 16px; }
+}
