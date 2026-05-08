@@ -1,8 +1,13 @@
 import { validateWords } from './src/core/validateWords.js';
 import { WORDS } from './src/data/words/index.js';
 import { createOrderSyllablesRound } from './src/exercises/orderSyllables.js';
+import { createHomeController } from './src/ui/home.js';
+import { createRouter } from './src/navigation/router.js';
 
 const refs = {
+  homeScreen: document.querySelector('#home-screen'),
+  exerciseScreen: document.querySelector('#exercise-screen'),
+  homeBtn: document.querySelector('#home-btn'),
   levelButtons: document.querySelectorAll('.level-btn'),
   exerciseContainer: document.querySelector('#exercise-container'),
   feedback: document.querySelector('#feedback'),
@@ -24,6 +29,11 @@ const POSITION_PATTERNS = {
   3: ['slot-a', 'slot-c', 'slot-e'],
   4: ['slot-a', 'slot-b', 'slot-d', 'slot-f']
 };
+
+const router = createRouter({
+  homeScreen: refs.homeScreen,
+  exerciseScreen: refs.exerciseScreen
+});
 
 function setFeedback(message, type = '') {
   refs.feedback.textContent = message;
@@ -55,7 +65,7 @@ function renderRound() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `syllable-piece ${slots[index] ?? 'slot-c'}`;
-    button.textContent = piece.text;
+    button.textContent = piece.text.toUpperCase();
     button.dataset.syllable = piece.text;
     button.addEventListener('click', () => handleSyllableTap(button));
     piecesWrap.appendChild(button);
@@ -85,7 +95,7 @@ function updateAnswerSlots() {
   const slots = refs.exerciseContainer.querySelectorAll('.answer-slot');
 
   slots.forEach((slot, index) => {
-    slot.textContent = state.answer[index] ?? '';
+    slot.textContent = state.answer[index]?.toUpperCase() ?? '';
   });
 }
 
@@ -147,15 +157,35 @@ function setLevel(level) {
   startRound();
 }
 
+function openExercise(exerciseId) {
+  if (exerciseId !== 'order-syllables') {
+    return;
+  }
+
+  router.showExercise();
+  state.score = 0;
+  refs.score.textContent = '0';
+  setLevel(1);
+}
+
 function init() {
   validateWords(WORDS);
+
+  const homeController = createHomeController({
+    homeScreen: refs.homeScreen,
+    onSelectExercise: openExercise
+  });
+
+  homeController.bindEvents();
 
   refs.levelButtons.forEach((button) => {
     button.addEventListener('click', () => setLevel(Number(button.dataset.level)));
   });
 
   refs.nextBtn.addEventListener('click', startRound);
-  setLevel(1);
+  refs.homeBtn.addEventListener('click', () => router.showHome());
+
+  router.showHome();
 }
 
 init();
