@@ -4,8 +4,11 @@ export function createHomeController({ homeScreen, onSelectExercise }) {
   function bindEvents() {
     cards.forEach((card) => {
       card.addEventListener('click', () => {
-        const exerciseId = card.dataset.exercise;
-        onSelectExercise(exerciseId);
+        if (card.disabled || card.dataset.status === 'coming-soon') {
+          return;
+        }
+
+        onSelectExercise(card.dataset.exercise);
       });
     });
   }

@@ -5,6 +5,7 @@ import { createHomeController } from './src/ui/home.js';
 import { createRouter } from './src/navigation/router.js';
 
 const refs = {
+  appRoot: document.querySelector('#app-root'),
   homeScreen: document.querySelector('#home-screen'),
   exerciseScreen: document.querySelector('#exercise-screen'),
   homeBtn: document.querySelector('#home-btn'),
@@ -31,8 +32,11 @@ const POSITION_PATTERNS = {
 };
 
 const router = createRouter({
-  homeScreen: refs.homeScreen,
-  exerciseScreen: refs.exerciseScreen
+  root: refs.appRoot,
+  views: {
+    home: refs.homeScreen,
+    exercise: refs.exerciseScreen
+  }
 });
 
 function setFeedback(message, type = '') {
@@ -162,7 +166,7 @@ function openExercise(exerciseId) {
     return;
   }
 
-  router.showExercise();
+  router.navigateExercise();
   state.score = 0;
   refs.score.textContent = '0';
   setLevel(1);
@@ -183,9 +187,9 @@ function init() {
   });
 
   refs.nextBtn.addEventListener('click', startRound);
-  refs.homeBtn.addEventListener('click', () => router.showHome());
+  refs.homeBtn.addEventListener('click', () => router.navigateHome());
 
-  router.showHome();
+  router.init('home');
 }
 
 init();

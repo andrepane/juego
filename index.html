@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app">
-    <section id="home-screen" class="panel home-screen">
+  <div id="app-root" class="app">
+    <section id="home-screen" class="view panel home-screen">
       <p class="eyebrow">Plataforma educativa</p>
       <h1>TITULO</h1>
       <p class="subtitle">Una experiencia interactiva para practicar habilidades lingüísticas con ejercicios breves, claros y progresivos.</p>
@@ -18,13 +18,21 @@
           <strong>Ordenar sílabas</strong>
           <span>Organiza sílabas para formar palabras correctamente.</span>
         </button>
+        <button type="button" class="exercise-card is-disabled" data-status="coming-soon" disabled>
+          <strong>Intruso silábico</strong>
+          <span>Próximamente.</span>
+        </button>
+        <button type="button" class="exercise-card is-disabled" data-status="coming-soon" disabled>
+          <strong>Memoria</strong>
+          <span>Próximamente.</span>
+        </button>
       </nav>
     </section>
 
-    <section id="exercise-screen" class="exercise-screen is-hidden">
+    <section id="exercise-screen" class="view exercise-screen">
       <header class="app-header panel">
         <div class="header-top-row">
-          <button id="home-btn" class="back-btn" type="button" aria-label="Volver a la portada">Inicio</button>
+          <button id="home-btn" class="back-btn" type="button" aria-label="Volver a la portada">Volver</button>
           <p class="eyebrow">Ejercicio base de plataforma</p>
         </div>
         <h1>Ordenar sílabas</h1>
