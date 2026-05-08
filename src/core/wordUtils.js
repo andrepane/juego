@@ -4,20 +4,15 @@ export function getAllWords() {
   return [...WORDS];
 }
 
-export function getWordsByDifficulty(level) {
-  return WORDS.filter((word) => word.difficulty === level);
-}
-
-export function getWordsByCategory(category) {
-  return WORDS.filter((word) => word.category === category);
-}
-
-export function getWordsWithSyllableCount(count) {
-  return WORDS.filter((word) => word.syllableCount === count);
-}
-
 export function shuffleArray(array) {
-  return [...array].sort(() => Math.random() - 0.5);
+  const next = [...array];
+
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[randomIndex]] = [next[randomIndex], next[index]];
+  }
+
+  return next;
 }
 
 export function getRandomWord(words = WORDS) {
@@ -29,7 +24,7 @@ export function getRandomWord(words = WORDS) {
 }
 
 export function getFilteredWords(filters = {}) {
-  const { difficulty, category, syllableCount } = filters;
+  const { difficulty, category, syllableCount, frequency, structure } = filters;
 
   return WORDS.filter((word) => {
     if (difficulty !== undefined && word.difficulty !== difficulty) {
@@ -42,6 +37,26 @@ export function getFilteredWords(filters = {}) {
 
     if (syllableCount !== undefined && word.syllableCount !== syllableCount) {
       return false;
+    }
+
+    if (frequency !== undefined) {
+      if (Array.isArray(frequency)) {
+        if (!frequency.includes(word.frequency)) {
+          return false;
+        }
+      } else if (word.frequency !== frequency) {
+        return false;
+      }
+    }
+
+    if (structure !== undefined) {
+      if (Array.isArray(structure)) {
+        if (!structure.includes(word.structure)) {
+          return false;
+        }
+      } else if (word.structure !== structure) {
+        return false;
+      }
     }
 
     return true;

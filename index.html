@@ -3,63 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Logopedia Interactiva</title>
+  <title>Ordenar sílabas</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app">
-    <header class="app-header">
-      <p class="eyebrow">Logopedia interactiva</p>
-      <h1>Conciencia silábica</h1>
-      <p class="subtitle">
-        Ejercicios dinámicos para trabajar segmentación silábica.
-      </p>
+    <header class="app-header panel">
+      <p class="eyebrow">Ejercicio base de plataforma</p>
+      <h1>Ordenar sílabas</h1>
+      <p class="subtitle">Toca las sílabas en orden para construir la palabra.</p>
     </header>
 
-    <main class="main-layout">
-      <section class="panel">
-        <h2>Elige un ejercicio</h2>
-
-        <div class="exercise-menu">
-          <button class="exercise-card is-active" data-exercise="count">
-            <span>1</span>
-            Contar sílabas
-          </button>
-
-          <button class="exercise-card" data-exercise="initial">
-            <span>2</span>
-            Sílaba inicial
-          </button>
-
-          <button class="exercise-card" data-exercise="order">
-            <span>3</span>
-            Ordenar sílabas
-          </button>
-        </div>
-      </section>
-
-      <section class="panel exercise-panel">
-        <div class="exercise-top">
-          <div>
-            <p id="exercise-type" class="eyebrow">Ejercicio</p>
-            <h2 id="exercise-title">Contar sílabas</h2>
-          </div>
-
-          <div class="score-box">
-            <span>Aciertos</span>
-            <strong id="score">0</strong>
-          </div>
+    <main class="panel exercise-panel">
+      <div class="exercise-top">
+        <div>
+          <p class="eyebrow" id="level-label">Nivel 1</p>
+          <h2 id="round-word">2 sílabas</h2>
         </div>
 
-        <div id="exercise-container" class="exercise-container"></div>
-
-        <div class="actions">
-          <button id="check-btn" class="primary-btn">Comprobar</button>
-          <button id="next-btn" class="secondary-btn">Siguiente</button>
+        <div class="score-box">
+          <span>Aciertos</span>
+          <strong id="score">0</strong>
         </div>
+      </div>
 
-        <p id="feedback" class="feedback" aria-live="polite"></p>
-      </section>
+      <div class="level-tabs">
+        <button class="level-btn is-active" data-level="1">Nivel 1</button>
+        <button class="level-btn" data-level="2">Nivel 2</button>
+        <button class="level-btn" data-level="3">Nivel 3</button>
+      </div>
+
+      <div id="exercise-container" class="exercise-container"></div>
+
+      <div class="actions">
+        <button id="next-btn" class="secondary-btn">Nueva palabra</button>
+      </div>
+
+      <p id="feedback" class="feedback" aria-live="polite"></p>
     </main>
   </div>
 
