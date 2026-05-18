@@ -1,14 +1,9 @@
-import { getFilteredWords, getRandomWord, shuffleArray } from '../core/wordUtils.js';
-import { createRecentHistory } from '../core/recentHistory.js';
-import { resolveOrderLevel, resolveOrderMode } from './orderSyllablesConfig.js';
+import { getFilteredWords, shuffleArray } from '../core/wordUtils.js';
+import { resolveOrderLevel, resolveOrderMode, resolveSessionMode } from './orderSyllablesConfig.js';
 
 function getLinguisticCandidates(levelConfig) {
   const base = getFilteredWords(levelConfig.linguisticFilters);
-
-  if (levelConfig.id !== 3) {
-    return base;
-  }
-
+  if (levelConfig.id !== 3) return base;
   return base.filter((word) => word.structure !== 'CV-CV-CV');
 }
 
@@ -16,24 +11,8 @@ function createSyllablePieces(syllables) {
   return shuffleArray(syllables).map((text, index) => ({ id: `${text}-${index}`, text }));
 }
 
-function classifyError({ expected, tapped, submitted, target }) {
-  if (tapped && expected && tapped !== expected) {
-    return 'orden_incorrecto';
-  }
-
-  if (!submitted || !target) {
-    return 'orden_incorrecto';
-  }
-
-  if (submitted.length < target.length) {
-    return 'omision';
-  }
-
-  const sameItems = [...submitted].sort().join('|') === [...target].sort().join('|');
-  if (submitted.length === target.length && sameItems && submitted.join('-') !== target.join('-')) {
-    return 'inversion';
-  }
-
+function classifyError({ expected, tapped }) {
+  if (tapped && expected && tapped !== expected) return 'orden_incorrecto';
   return 'orden_incorrecto';
 }
 
@@ -41,52 +20,32 @@ export function createOrderSyllablesPlugin() {
   const state = {
     level: 1,
     mode: 'normal',
+    sessionMode: 'normal',
     round: null,
     answer: [],
     score: 0,
-    metrics: {
-      roundsPlayed: 0,
-      roundsCorrect: 0,
-      errorsByType: {
-        inversion: 0,
-        omision: 0,
-        orden_incorrecto: 0
-      }
-    }
+    sessionWords: [],
+    sessionCursor: 0,
+    sessionStats: { correctWords: 0, errors: 0 },
+    metrics: { roundsPlayed: 0, roundsCorrect: 0, errorsByType: { inversion: 0, omision: 0, orden_incorrecto: 0 } }
   };
 
-  const recentHistory = createRecentHistory(10);
-
-  function getCandidates(level) {
+  function buildSessionWords(level) {
     const config = resolveOrderLevel(level);
-    const all = getLinguisticCandidates(config);
-    const fresh = all.filter((word) => !recentHistory.has(word.id));
-
-    return {
-      config,
-      pool: fresh.length > 0 ? fresh : all
-    };
+    const targetCount = resolveSessionMode(state.sessionMode).wordCount;
+    const pool = getLinguisticCandidates(config);
+    const shuffled = shuffleArray(pool);
+    return { config, words: shuffled.slice(0, Math.min(targetCount, shuffled.length)) };
   }
 
-  function makeRound(level = state.level) {
-    const { config, pool } = getCandidates(level);
+  function makeRoundWord(word, config) {
     const mode = resolveOrderMode(state.mode);
-    const word = getRandomWord(pool);
-
-    if (!word) {
-      return null;
-    }
-
     return {
       level: config.id,
       levelLabel: config.label,
       mode: mode.id,
       modeLabel: mode.label,
-      word: {
-        id: word.id,
-        text: word.word,
-        syllables: [...word.syllables]
-      },
+      word: { id: word.id, text: word.word, syllables: [...word.syllables] },
       pieces: createSyllablePieces(word.syllables),
       expectedLength: word.syllables.length,
       correctAnswer: word.syllables.join('-')
@@ -94,29 +53,32 @@ export function createOrderSyllablesPlugin() {
   }
 
   function start(payload = {}) {
-    if (Number.isInteger(payload.level)) {
-      state.level = payload.level;
-    }
-
-    if (payload.mode !== undefined) {
-      state.mode = resolveOrderMode(payload.mode).id;
-    }
+    if (Number.isInteger(payload.level)) state.level = payload.level;
+    if (payload.mode !== undefined) state.mode = resolveOrderMode(payload.mode).id;
+    if (payload.sessionMode !== undefined) state.sessionMode = resolveSessionMode(payload.sessionMode).id;
 
     if (payload.resetScore) {
       state.score = 0;
       state.metrics.roundsPlayed = 0;
       state.metrics.roundsCorrect = 0;
       state.metrics.errorsByType = { inversion: 0, omision: 0, orden_incorrecto: 0 };
-      recentHistory.clear();
+    }
+
+    if (payload.startSession || state.sessionWords.length === 0) {
+      const { config, words } = buildSessionWords(state.level);
+      state.sessionWords = words;
+      state.sessionCursor = 0;
+      state.sessionStats = { correctWords: 0, errors: 0 };
+      state.round = words[0] ? makeRoundWord(words[0], config) : null;
+    }
+
+    if (!state.round && state.sessionWords[state.sessionCursor]) {
+      const config = resolveOrderLevel(state.level);
+      state.round = makeRoundWord(state.sessionWords[state.sessionCursor], config);
     }
 
     state.answer = [];
-    state.round = makeRound(state.level);
-
-    if (!state.round) {
-      return { status: 'empty' };
-    }
-
+    if (!state.round) return { status: 'empty' };
     state.metrics.roundsPlayed += 1;
 
     return {
@@ -128,96 +90,77 @@ export function createOrderSyllablesPlugin() {
       expectedLength: state.round.expectedLength,
       pieces: state.round.pieces,
       wordId: state.round.word.id,
-      answer: []
+      answer: [],
+      progress: {
+        completedWords: state.sessionCursor,
+        totalWords: state.sessionWords.length
+      }
     };
   }
 
   function submit(payload = {}) {
-    if (!state.round) {
-      return { status: 'empty' };
+    if (!state.round) return { status: 'empty' };
+    if (payload.type !== 'tap') return { status: 'idle' };
+
+    const tapped = payload.syllable;
+    if (state.answer.length >= state.round.expectedLength) return { status: 'locked', answer: [...state.answer] };
+    const expected = state.round.word.syllables[state.answer.length];
+
+    if (tapped !== expected) {
+      const errorType = classifyError({ tapped, expected });
+      state.metrics.errorsByType[errorType] += 1;
+      state.sessionStats.errors += 1;
+      return { status: 'error', errorType, expected, answer: [...state.answer] };
     }
 
-    if (payload.type === 'tap') {
-      const tapped = payload.syllable;
-      if (state.answer.length >= state.round.expectedLength) {
-        return { status: 'locked', answer: [...state.answer] };
-      }
-
-      const expected = state.round.word.syllables[state.answer.length];
-
-      if (tapped !== expected) {
-        const errorType = classifyError({ tapped, expected });
-        state.metrics.errorsByType[errorType] += 1;
-        return {
-          status: 'error',
-          errorType,
-          expected,
-          answer: [...state.answer]
-        };
-      }
-
-      state.answer.push(tapped);
-      if (state.answer.length === state.round.expectedLength) {
-        return submit({ type: 'validate' });
-      }
-
-      return {
-        status: 'progress',
-        answer: [...state.answer],
-        completed: false
-      };
+    state.answer.push(tapped);
+    if (state.answer.length !== state.round.expectedLength) {
+      return { status: 'progress', answer: [...state.answer], completed: false };
     }
 
-    if (payload.type === 'validate') {
-      const success = state.answer.join('-') === state.round.correctAnswer;
+    state.score += 1;
+    state.metrics.roundsCorrect += 1;
+    state.sessionStats.correctWords += 1;
+    const wordId = state.round.word.id;
 
-      if (!success) {
-        const errorType = classifyError({ submitted: state.answer, target: state.round.word.syllables });
-        state.metrics.errorsByType[errorType] += 1;
-        return {
-          status: 'incorrect',
-          errorType,
-          answer: [...state.answer],
-          targetLength: state.round.expectedLength
-        };
-      }
-
-      state.score += 1;
-      state.metrics.roundsCorrect += 1;
-      recentHistory.add(state.round.word.id);
-
-      return {
-        status: 'correct',
-        score: state.score,
-        answer: [...state.answer],
-        wordId: state.round.word.id
-      };
+    state.sessionCursor += 1;
+    const sessionCompleted = state.sessionCursor >= state.sessionWords.length;
+    if (!sessionCompleted) {
+      const config = resolveOrderLevel(state.level);
+      state.round = makeRoundWord(state.sessionWords[state.sessionCursor], config);
+      state.answer = [];
     }
 
-    return { status: 'idle' };
-  }
-
-  function next(payload = {}) {
-    if (payload.level !== undefined) {
-      state.level = payload.level;
-    }
-    if (payload.mode !== undefined) {
-      state.mode = resolveOrderMode(payload.mode).id;
-    }
-    return start({ level: state.level, mode: state.mode });
+    return {
+      status: 'correct',
+      score: state.score,
+      answer: [...state.answer],
+      wordId,
+      roundCompleted: sessionCompleted,
+      roundSummary: sessionCompleted
+        ? {
+            completedWords: state.sessionWords.length,
+            correctWords: state.sessionStats.correctWords,
+            errors: state.sessionStats.errors,
+            score: state.score,
+            usedWords: state.sessionWords.map((word) => word.id)
+          }
+        : null
+    };
   }
 
   return {
     id: 'order-syllables',
     start,
     submit,
-    next,
+    next: start,
     getMetrics: () => ({
       score: state.score,
       roundsPlayed: state.metrics.roundsPlayed,
       roundsCorrect: state.metrics.roundsCorrect,
       errorsByType: { ...state.metrics.errorsByType },
-      recentWordIds: recentHistory.snapshot()
+      sessionWordIds: state.sessionWords.map((word) => word.id),
+      completedInSession: state.sessionCursor
     })
   };
 }

@@ -53,3 +53,14 @@ export function resolveOrderMode(modeId = 'normal') {
   const candidate = ORDER_MODES[modeId] ?? ORDER_MODES.normal;
   return candidate.enabled ? candidate : ORDER_MODES.normal;
 }
+
+
+export const SESSION_MODES = {
+  short: { id: 'short', label: 'Corta', wordCount: 10 },
+  normal: { id: 'normal', label: 'Normal', wordCount: 15 },
+  long: { id: 'long', label: 'Larga', wordCount: 20 }
+};
+
+export function resolveSessionMode(sessionModeId = 'normal') {
+  return SESSION_MODES[sessionModeId] ?? SESSION_MODES.normal;
+}

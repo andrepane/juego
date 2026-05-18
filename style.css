@@ -354,3 +354,51 @@ button:focus-visible { outline: 3px solid #2f75f3; outline-offset: 2px; }
   .footer-actions { justify-self: stretch; }
   .secondary-btn { width: 100%; }
 }
+
+.round-progress {
+  margin: 6px 0 0;
+  font-weight: 800;
+  color: var(--accent);
+  background: rgba(255,255,255,.75);
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+}
+
+.exercise-container.word-complete {
+  animation: wordCompletePulse 420ms ease;
+}
+
+@keyframes wordCompletePulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  45% { transform: scale(1.01); filter: brightness(1.08); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.round-summary {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(39, 25, 13, 0.26);
+  backdrop-filter: blur(4px);
+  z-index: 8;
+  animation: summaryIn 240ms ease;
+}
+
+@keyframes summaryIn { from { opacity: 0; } to { opacity: 1; } }
+
+.round-summary__content {
+  width: min(92%, 680px);
+  background: linear-gradient(180deg, #fffdfa, #f7efe4);
+  border-radius: 24px;
+  border: 1px solid rgba(111, 79, 59, 0.22);
+  box-shadow: var(--shadow-md);
+  padding: 22px;
+  text-align: center;
+}
+.round-summary__eyebrow { margin: 0; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-size: .75rem; font-weight: 800; }
+.round-summary__stats { display: grid; grid-template-columns: repeat(2,minmax(120px,1fr)); gap: 10px; margin: 16px 0; }
+.round-summary__stats span { background: #fff; border: 1px solid var(--line-soft); border-radius: 14px; padding: 10px; }
+.round-summary__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }

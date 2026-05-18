@@ -18,7 +18,9 @@ const refs = {
   score: document.querySelector('#score'),
   roundWord: document.querySelector('#round-word'),
   levelLabel: document.querySelector('#level-label'),
-  nextBtn: document.querySelector('#next-btn')
+  nextBtn: document.querySelector('#next-btn'),
+  progressChip: document.querySelector('#round-progress'),
+  summaryCard: document.querySelector('#round-summary')
 };
 
 const POSITION_PATTERNS = {
@@ -36,6 +38,42 @@ const router = createRouter({ root: refs.appRoot, views: { home: refs.homeScreen
 function setFeedback(message, type = '') {
   refs.feedback.textContent = message;
   refs.feedback.className = `feedback ${type ? `is-${type}` : ''}`;
+}
+
+function setProgress(progress = {}) {
+  if (!refs.progressChip) return;
+  if (!progress.totalWords) {
+    refs.progressChip.textContent = 'Ronda';
+    return;
+  }
+  refs.progressChip.textContent = `${progress.completedWords + 1} / ${progress.totalWords}`;
+}
+
+function renderRoundSummary(summary) {
+  if (!refs.summaryCard) return;
+  refs.summaryCard.hidden = false;
+  refs.summaryCard.innerHTML = `
+    <div class="round-summary__content">
+      <p class="round-summary__eyebrow">Ronda completada</p>
+      <h3>¡Muy bien! Objetivo cumplido.</h3>
+      <div class="round-summary__stats">
+        <span>Palabras: <strong>${summary.completedWords}</strong></span>
+        <span>Aciertos: <strong>${summary.correctWords}</strong></span>
+        <span>Errores: <strong>${summary.errors}</strong></span>
+        <span>Puntuación: <strong>${summary.score}</strong></span>
+      </div>
+      <div class="round-summary__actions">
+        <button type="button" data-round-action="repeat" class="secondary-btn">Repetir ronda</button>
+        <button type="button" data-round-action="new" class="secondary-btn">Nueva ronda</button>
+        <button type="button" data-round-action="home" class="secondary-btn">Volver al inicio</button>
+      </div>
+    </div>`;
+}
+
+function hideRoundSummary() {
+  if (!refs.summaryCard) return;
+  refs.summaryCard.hidden = true;
+  refs.summaryCard.innerHTML = '';
 }
 
 function getLayoutClass(pieceCount) {
@@ -58,6 +96,7 @@ function renderRound(viewModel) {
 
   refs.levelLabel.textContent = viewModel.levelLabel;
   refs.roundWord.textContent = `${viewModel.expectedLength} sílabas · ${viewModel.modeLabel}`;
+  setProgress(viewModel.progress);
 
   const piecesWrap = document.createElement('div');
   piecesWrap.className = 'pieces-cloud';
@@ -133,14 +172,24 @@ function handleSyllableTap(button) {
 
   if (result.status === 'correct') {
     refs.score.textContent = String(result.score);
-    setFeedback('Excelente. Nueva palabra…', 'success');
-    window.setTimeout(startRound, 900);
+    refs.exerciseContainer.classList.remove('word-complete');
+    void refs.exerciseContainer.offsetWidth;
+    refs.exerciseContainer.classList.add('word-complete');
+    setFeedback('Excelente palabra.', 'success');
+
+    if (result.roundCompleted) {
+      renderRoundSummary(result.roundSummary);
+      return;
+    }
+
+    window.setTimeout(startRound, 700);
   }
 }
 
 function startRound() {
   const plugin = getActivePlugin();
   if (!plugin) return;
+  hideRoundSummary();
   renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode }));
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
@@ -149,8 +198,9 @@ function setLevel(level) {
   state.currentLevel = level;
   refs.levelButtons.forEach((btn) => btn.classList.toggle('is-active', Number(btn.dataset.level) === level));
   const plugin = getActivePlugin();
-  renderRound(plugin.start({ level, mode: state.currentMode }));
-  setFeedback('Toca las sílabas en orden para formar una palabra.', '');
+  renderRound(plugin.start({ level, mode: state.currentMode, startSession: true }));
+  hideRoundSummary();
+  setFeedback('Nueva ronda preparada.', '');
 }
 
 function setMode(mode) {
@@ -164,8 +214,9 @@ function setMode(mode) {
   refs.modeButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === modeConfig.id));
   const plugin = getActivePlugin();
   if (!plugin) return;
-  renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode }));
-  setFeedback('Toca las sílabas en orden para formar una palabra.', '');
+  renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode, startSession: true }));
+  hideRoundSummary();
+  setFeedback('Nueva ronda preparada.', '');
 }
 
 function openExercise(exerciseId) {
@@ -178,7 +229,7 @@ function openExercise(exerciseId) {
   router.navigateExercise();
   document.body.classList.add('is-activity-mode');
   refs.score.textContent = '0';
-  plugin.start({ level: 1, mode: 'normal', resetScore: true });
+  renderRound(plugin.start({ level: 1, mode: 'normal', resetScore: true, startSession: true }));
   setLevel(1);
 }
 
@@ -197,17 +248,32 @@ function init() {
   });
 
   refs.nextBtn.addEventListener('click', startRound);
-  refs.nextBtn.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      startRound();
-    }
-  });
 
   refs.homeBtn.addEventListener('click', () => {
     router.navigateHome();
     document.body.classList.remove('is-activity-mode');
+    hideRoundSummary();
     setFeedback('');
+  });
+
+  refs.summaryCard?.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-round-action]')?.dataset.roundAction;
+    if (!action) return;
+    const plugin = getActivePlugin();
+    if (!plugin) return;
+
+    if (action === 'home') {
+      router.navigateHome();
+      document.body.classList.remove('is-activity-mode');
+      hideRoundSummary();
+      return;
+    }
+
+    const startSession = action === 'new';
+    refs.score.textContent = startSession ? '0' : refs.score.textContent;
+    renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode, startSession, resetScore: startSession }));
+    hideRoundSummary();
+    setFeedback(startSession ? 'Nueva ronda iniciada.' : 'Repitiendo ronda actual.', 'success');
   });
 
   router.init('home');
