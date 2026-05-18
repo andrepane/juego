@@ -76,6 +76,18 @@
     </section>
   </div>
 
+  <dialog id="level-confirm" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <form method="dialog" class="confirm-dialog__panel">
+      <p class="confirm-dialog__eyebrow">Cambiar nivel</p>
+      <h3 id="confirm-title">¿Interrumpir actividad actual?</h3>
+      <p id="confirm-text">Llevas avances en esta ronda. Si cambias de nivel ahora, se reiniciará tu progreso de la sesión.</p>
+      <div class="confirm-dialog__actions">
+        <button id="confirm-cancel" class="confirm-dialog__btn is-ghost" value="cancel">Seguir aquí</button>
+        <button id="confirm-accept" class="confirm-dialog__btn is-primary" value="accept">Sí, cambiar nivel</button>
+      </div>
+    </form>
+  </dialog>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>

@@ -21,7 +21,10 @@ const refs = {
   progressTrack: document.querySelector('.progress-track'),
   roundWord: document.querySelector('#round-word'),
   levelLabel: document.querySelector('#level-label'),
-  nextBtn: document.querySelector('#next-btn')
+  nextBtn: document.querySelector('#next-btn'),
+  levelConfirmDialog: document.querySelector('#level-confirm'),
+  levelConfirmAccept: document.querySelector('#confirm-accept'),
+  levelConfirmCancel: document.querySelector('#confirm-cancel')
 };
 
 const POSITION_PATTERNS = {
@@ -51,6 +54,17 @@ function setFeedback(message, type = '') {
 
 function getLayoutClass(pieceCount) {
   return POSITION_PATTERNS[pieceCount] ?? POSITION_PATTERNS[3];
+}
+
+function shuffleLayoutSlots(slots) {
+  const shuffled = [...slots];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+
+  return shuffled;
 }
 
 
@@ -88,7 +102,7 @@ function renderRound(viewModel) {
 
   const piecesWrap = document.createElement('div');
   piecesWrap.className = 'pieces-cloud';
-  const slots = getLayoutClass(viewModel.pieces.length);
+  const slots = shuffleLayoutSlots(getLayoutClass(viewModel.pieces.length));
 
   viewModel.pieces.forEach((piece, index) => {
     const button = document.createElement('button');
@@ -187,12 +201,12 @@ function startRound() {
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
-function setLevel(level) {
+async function setLevel(level) {
   if (state.currentLevel === level) return;
 
   const hasSessionProgress = state.completedWords > 0 && !state.isSessionFinished;
   if (hasSessionProgress) {
-    const shouldChange = window.confirm('Hay un ejercicio en curso. ¿Quieres interrumpirlo para cambiar de nivel?');
+    const shouldChange = await confirmLevelChange();
     if (!shouldChange) return;
   }
 
@@ -203,6 +217,26 @@ function setLevel(level) {
   const plugin = getActivePlugin();
   renderRound(plugin.start({ level, mode: state.currentMode, resetScore: true }));
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
+}
+
+
+function confirmLevelChange() {
+  const dialog = refs.levelConfirmDialog;
+
+  if (!dialog || typeof dialog.showModal !== 'function') {
+    return Promise.resolve(window.confirm('Hay un ejercicio en curso. ¿Quieres interrumpirlo para cambiar de nivel?'));
+  }
+
+  return new Promise((resolve) => {
+    const handleClose = () => {
+      dialog.removeEventListener('close', handleClose);
+      resolve(dialog.returnValue === 'accept');
+    };
+
+    dialog.addEventListener('close', handleClose);
+    dialog.showModal();
+    refs.levelConfirmCancel?.focus();
+  });
 }
 
 function setMode(mode) {
@@ -243,7 +277,9 @@ function init() {
   homeController.bindEvents();
 
   refs.levelButtons.forEach((button) => {
-    button.addEventListener('click', () => setLevel(Number(button.dataset.level)));
+    button.addEventListener('click', () => {
+      void setLevel(Number(button.dataset.level));
+    });
   });
 
   refs.modeButtons.forEach((button) => {
