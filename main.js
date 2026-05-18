@@ -4,6 +4,7 @@ import { createHomeController } from './src/ui/home.js';
 import { createRouter } from './src/navigation/router.js';
 import { createExerciseRegistry } from './src/core/exerciseRegistry.js';
 import { createOrderSyllablesPlugin } from './src/exercises/orderSyllablesPlugin.js';
+import { ORDER_MODES } from './src/exercises/orderSyllablesConfig.js';
 
 const refs = {
   appRoot: document.querySelector('#app-root'),
@@ -11,6 +12,7 @@ const refs = {
   exerciseScreen: document.querySelector('#exercise-screen'),
   homeBtn: document.querySelector('#home-btn'),
   levelButtons: document.querySelectorAll('.level-btn'),
+  modeButtons: document.querySelectorAll('.mode-btn'),
   exerciseContainer: document.querySelector('#exercise-container'),
   feedback: document.querySelector('#feedback'),
   score: document.querySelector('#score'),
@@ -25,7 +27,7 @@ const POSITION_PATTERNS = {
   4: ['slot-a', 'slot-b', 'slot-d', 'slot-f']
 };
 
-const state = { activeExerciseId: null, currentLevel: 1 };
+const state = { activeExerciseId: null, currentLevel: 1, currentMode: 'normal' };
 const registry = createExerciseRegistry();
 registry.register(createOrderSyllablesPlugin());
 
@@ -55,7 +57,7 @@ function renderRound(viewModel) {
   }
 
   refs.levelLabel.textContent = viewModel.levelLabel;
-  refs.roundWord.textContent = `${viewModel.expectedLength} sílabas`;
+  refs.roundWord.textContent = `${viewModel.expectedLength} sílabas · ${viewModel.modeLabel}`;
 
   const piecesWrap = document.createElement('div');
   piecesWrap.className = 'pieces-cloud';
@@ -139,7 +141,7 @@ function handleSyllableTap(button) {
 function startRound() {
   const plugin = getActivePlugin();
   if (!plugin) return;
-  renderRound(plugin.start({ level: state.currentLevel }));
+  renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode }));
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
@@ -147,7 +149,22 @@ function setLevel(level) {
   state.currentLevel = level;
   refs.levelButtons.forEach((btn) => btn.classList.toggle('is-active', Number(btn.dataset.level) === level));
   const plugin = getActivePlugin();
-  renderRound(plugin.start({ level }));
+  renderRound(plugin.start({ level, mode: state.currentMode }));
+  setFeedback('Toca las sílabas en orden para formar una palabra.', '');
+}
+
+function setMode(mode) {
+  const modeConfig = ORDER_MODES[mode] ?? ORDER_MODES.normal;
+  if (!modeConfig.enabled) {
+    setFeedback('Este modo estará disponible próximamente.', 'error');
+    return;
+  }
+
+  state.currentMode = modeConfig.id;
+  refs.modeButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === modeConfig.id));
+  const plugin = getActivePlugin();
+  if (!plugin) return;
+  renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode }));
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
@@ -160,7 +177,7 @@ function openExercise(exerciseId) {
   state.activeExerciseId = exerciseId;
   router.navigateExercise();
   refs.score.textContent = '0';
-  plugin.start({ level: 1, resetScore: true });
+  plugin.start({ level: 1, mode: 'normal', resetScore: true });
   setLevel(1);
 }
 
@@ -172,6 +189,10 @@ function init() {
 
   refs.levelButtons.forEach((button) => {
     button.addEventListener('click', () => setLevel(Number(button.dataset.level)));
+  });
+
+  refs.modeButtons.forEach((button) => {
+    button.addEventListener('click', () => setMode(button.dataset.mode));
   });
 
   refs.nextBtn.addEventListener('click', startRound);
