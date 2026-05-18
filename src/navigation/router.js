@@ -18,6 +18,9 @@ export function createRouter({ views, root }) {
       element.classList.toggle('is-inactive-view', !isActive);
       element.setAttribute('aria-hidden', String(!isActive));
     });
+
+    root.classList.toggle('is-home-view', state.activeView === VIEWS.home);
+    root.classList.toggle('is-exercise-view', state.activeView === VIEWS.exercise);
   }
 
   function navigate(nextView) {
