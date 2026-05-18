@@ -16,6 +16,9 @@ const refs = {
   exerciseContainer: document.querySelector('#exercise-container'),
   feedback: document.querySelector('#feedback'),
   score: document.querySelector('#score'),
+  progressLabel: document.querySelector('#progress-label'),
+  progressFill: document.querySelector('#progress-fill'),
+  progressTrack: document.querySelector('.progress-track'),
   roundWord: document.querySelector('#round-word'),
   levelLabel: document.querySelector('#level-label'),
   nextBtn: document.querySelector('#next-btn')
@@ -27,7 +30,15 @@ const POSITION_PATTERNS = {
   4: ['slot-a', 'slot-b', 'slot-d', 'slot-f']
 };
 
-const state = { activeExerciseId: null, currentLevel: 1, currentMode: 'normal' };
+const SESSION_WORDS_TARGET = 15;
+
+const state = {
+  activeExerciseId: null,
+  currentLevel: 1,
+  currentMode: 'normal',
+  completedWords: 0,
+  isSessionFinished: false
+};
 const registry = createExerciseRegistry();
 registry.register(createOrderSyllablesPlugin());
 
@@ -40,6 +51,22 @@ function setFeedback(message, type = '') {
 
 function getLayoutClass(pieceCount) {
   return POSITION_PATTERNS[pieceCount] ?? POSITION_PATTERNS[3];
+}
+
+
+function updateProgress() {
+  const progress = Math.min(state.completedWords, SESSION_WORDS_TARGET);
+  const percent = (progress / SESSION_WORDS_TARGET) * 100;
+  refs.progressLabel.textContent = `${progress}/${SESSION_WORDS_TARGET}`;
+  refs.progressFill.style.width = `${percent}%`;
+  refs.progressTrack?.setAttribute('aria-valuenow', String(progress));
+}
+
+function resetSessionProgress() {
+  state.completedWords = 0;
+  state.isSessionFinished = false;
+  refs.score.textContent = '0';
+  updateProgress();
 }
 
 function updateAnswerSlots(answer = []) {
@@ -133,6 +160,15 @@ function handleSyllableTap(button) {
 
   if (result.status === 'correct') {
     refs.score.textContent = String(result.score);
+    state.completedWords += 1;
+    updateProgress();
+
+    if (state.completedWords >= SESSION_WORDS_TARGET) {
+      state.isSessionFinished = true;
+      setFeedback('¡Muy bien! Terminaste el ejercicio de 15 palabras.', 'success');
+      return;
+    }
+
     setFeedback('Excelente. Nueva palabra…', 'success');
     window.setTimeout(startRound, 900);
   }
@@ -141,15 +177,31 @@ function handleSyllableTap(button) {
 function startRound() {
   const plugin = getActivePlugin();
   if (!plugin) return;
+
+  if (state.isSessionFinished) {
+    setFeedback('Sesión completada (15/15). Cambia de nivel o vuelve al inicio para comenzar otra.', 'success');
+    return;
+  }
+
   renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode }));
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
 function setLevel(level) {
+  if (state.currentLevel === level) return;
+
+  const hasSessionProgress = state.completedWords > 0 && !state.isSessionFinished;
+  if (hasSessionProgress) {
+    const shouldChange = window.confirm('Hay un ejercicio en curso. ¿Quieres interrumpirlo para cambiar de nivel?');
+    if (!shouldChange) return;
+  }
+
   state.currentLevel = level;
   refs.levelButtons.forEach((btn) => btn.classList.toggle('is-active', Number(btn.dataset.level) === level));
+  resetSessionProgress();
+
   const plugin = getActivePlugin();
-  renderRound(plugin.start({ level, mode: state.currentMode }));
+  renderRound(plugin.start({ level, mode: state.currentMode, resetScore: true }));
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
@@ -177,9 +229,11 @@ function openExercise(exerciseId) {
   state.activeExerciseId = exerciseId;
   router.navigateExercise();
   document.body.classList.add('is-activity-mode');
-  refs.score.textContent = '0';
-  plugin.start({ level: 1, mode: 'normal', resetScore: true });
-  setLevel(1);
+  state.currentLevel = 1;
+  refs.levelButtons.forEach((btn) => btn.classList.toggle('is-active', Number(btn.dataset.level) === 1));
+  resetSessionProgress();
+  renderRound(plugin.start({ level: 1, mode: 'normal', resetScore: true }));
+  setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
 function init() {
@@ -210,6 +264,7 @@ function init() {
     setFeedback('');
   });
 
+  updateProgress();
   router.init('home');
   document.body.classList.remove('is-activity-mode');
 }
