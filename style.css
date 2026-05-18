@@ -104,3 +104,8 @@ h1,h2 { margin:0; }
   .syllable-piece { min-width:72px; font-size:1.05rem; }
   .panel { padding: 16px; }
 }
+
+button:focus-visible { outline: 3px solid #1d6ef2; outline-offset: 2px; }
+.exercise-card,.level-btn,.secondary-btn,.back-btn,.syllable-piece { cursor: pointer; }
+.syllable-piece { font-size: clamp(1rem, 2.6vw, 1.25rem); }
+.answer-slot { min-width: clamp(64px, 18vw, 74px); }

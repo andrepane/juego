@@ -1,8 +1,9 @@
 import { validateWords } from './src/core/validateWords.js';
 import { WORDS } from './src/data/words/index.js';
-import { createOrderSyllablesRound } from './src/exercises/orderSyllables.js';
 import { createHomeController } from './src/ui/home.js';
 import { createRouter } from './src/navigation/router.js';
+import { createExerciseRegistry } from './src/core/exerciseRegistry.js';
+import { createOrderSyllablesPlugin } from './src/exercises/orderSyllablesPlugin.js';
 
 const refs = {
   appRoot: document.querySelector('#app-root'),
@@ -18,26 +19,17 @@ const refs = {
   nextBtn: document.querySelector('#next-btn')
 };
 
-const state = {
-  level: 1,
-  score: 0,
-  round: null,
-  answer: []
-};
-
 const POSITION_PATTERNS = {
   2: ['slot-a', 'slot-d'],
   3: ['slot-a', 'slot-c', 'slot-e'],
   4: ['slot-a', 'slot-b', 'slot-d', 'slot-f']
 };
 
-const router = createRouter({
-  root: refs.appRoot,
-  views: {
-    home: refs.homeScreen,
-    exercise: refs.exerciseScreen
-  }
-});
+const state = { activeExerciseId: null, currentLevel: 1 };
+const registry = createExerciseRegistry();
+registry.register(createOrderSyllablesPlugin());
+
+const router = createRouter({ root: refs.appRoot, views: { home: refs.homeScreen, exercise: refs.exerciseScreen } });
 
 function setFeedback(message, type = '') {
   refs.feedback.textContent = message;
@@ -48,30 +40,41 @@ function getLayoutClass(pieceCount) {
   return POSITION_PATTERNS[pieceCount] ?? POSITION_PATTERNS[3];
 }
 
-function renderRound() {
-  const round = state.round;
+function updateAnswerSlots(answer = []) {
+  const slots = refs.exerciseContainer.querySelectorAll('.answer-slot');
+  slots.forEach((slot, index) => {
+    slot.textContent = answer[index]?.toUpperCase() ?? '';
+  });
+}
 
-  if (!round) {
+function renderRound(viewModel) {
+  if (!viewModel || viewModel.status !== 'ready') {
     refs.exerciseContainer.innerHTML = '';
     setFeedback('No hay palabras disponibles con esos filtros.', 'error');
     return;
   }
 
-  refs.levelLabel.textContent = round.levelLabel;
-  refs.roundWord.textContent = `${round.word.syllables.length} sílabas`;
+  refs.levelLabel.textContent = viewModel.levelLabel;
+  refs.roundWord.textContent = `${viewModel.expectedLength} sílabas`;
 
   const piecesWrap = document.createElement('div');
   piecesWrap.className = 'pieces-cloud';
+  const slots = getLayoutClass(viewModel.pieces.length);
 
-  const slots = getLayoutClass(round.pieces.length);
-
-  round.pieces.forEach((piece, index) => {
+  viewModel.pieces.forEach((piece, index) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `syllable-piece ${slots[index] ?? 'slot-c'}`;
     button.textContent = piece.text.toUpperCase();
     button.dataset.syllable = piece.text;
+    button.setAttribute('aria-label', `Sílaba ${piece.text.toUpperCase()}`);
     button.addEventListener('click', () => handleSyllableTap(button));
+    button.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleSyllableTap(button);
+      }
+    });
     piecesWrap.appendChild(button);
   });
 
@@ -81,37 +84,32 @@ function renderRound() {
 
   const slotsWrap = document.createElement('div');
   slotsWrap.className = 'answer-slots';
-
-  for (let index = 0; index < round.expectedLength; index += 1) {
+  for (let index = 0; index < viewModel.expectedLength; index += 1) {
     const slot = document.createElement('div');
     slot.className = 'answer-slot';
     slot.dataset.index = String(index);
+    slot.setAttribute('aria-hidden', 'true');
     slotsWrap.appendChild(slot);
   }
 
   answerWrap.appendChild(slotsWrap);
-
   refs.exerciseContainer.innerHTML = '';
   refs.exerciseContainer.append(piecesWrap, answerWrap);
+  updateAnswerSlots(viewModel.answer);
+  piecesWrap.querySelector('.syllable-piece')?.focus();
 }
 
-function updateAnswerSlots() {
-  const slots = refs.exerciseContainer.querySelectorAll('.answer-slot');
-
-  slots.forEach((slot, index) => {
-    slot.textContent = state.answer[index]?.toUpperCase() ?? '';
-  });
+function getActivePlugin() {
+  return registry.get(state.activeExerciseId);
 }
 
 function handleSyllableTap(button) {
-  if (!state.round || state.answer.length >= state.round.expectedLength) {
-    return;
-  }
+  const plugin = getActivePlugin();
+  if (!plugin) return;
 
-  const expected = state.round.word.syllables[state.answer.length];
-  const tapped = button.dataset.syllable;
+  const result = plugin.submit({ type: 'tap', syllable: button.dataset.syllable });
 
-  if (tapped !== expected) {
+  if (result.status === 'error') {
     button.classList.remove('is-wrong');
     void button.offsetWidth;
     button.classList.add('is-wrong');
@@ -119,67 +117,57 @@ function handleSyllableTap(button) {
     return;
   }
 
-  state.answer.push(tapped);
-  updateAnswerSlots();
-  button.classList.remove('is-correct');
-  void button.offsetWidth;
-  button.classList.add('is-correct');
-  setFeedback('¡Bien! Sigue.', 'success');
-
-  if (state.answer.length === state.round.expectedLength) {
-    validateRound();
+  if (result.answer) {
+    updateAnswerSlots(result.answer);
   }
-}
 
-function validateRound() {
-  const answer = state.answer.join('-');
-
-  if (answer === state.round.correctAnswer) {
-    state.score += 1;
-    refs.score.textContent = String(state.score);
-    setFeedback('Excelente. Nueva palabra…', 'success');
-    window.setTimeout(startRound, 900);
+  if (result.status === 'progress') {
+    button.classList.remove('is-correct');
+    void button.offsetWidth;
+    button.classList.add('is-correct');
+    setFeedback('¡Bien! Sigue.', 'success');
     return;
   }
 
-  refs.exerciseContainer.querySelector('.answer-zone')?.classList.add('is-wrong');
-  setFeedback('Orden incorrecto. Probemos otra vez.', 'error');
-  state.answer = [];
-  window.setTimeout(updateAnswerSlots, 250);
+  if (result.status === 'correct') {
+    refs.score.textContent = String(result.score);
+    setFeedback('Excelente. Nueva palabra…', 'success');
+    window.setTimeout(startRound, 900);
+  }
 }
 
 function startRound() {
-  state.answer = [];
-  state.round = createOrderSyllablesRound(state.level);
-  renderRound();
+  const plugin = getActivePlugin();
+  if (!plugin) return;
+  renderRound(plugin.start({ level: state.currentLevel }));
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
 function setLevel(level) {
-  state.level = level;
+  state.currentLevel = level;
   refs.levelButtons.forEach((btn) => btn.classList.toggle('is-active', Number(btn.dataset.level) === level));
-  startRound();
+  const plugin = getActivePlugin();
+  renderRound(plugin.start({ level }));
+  setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
 function openExercise(exerciseId) {
-  if (exerciseId !== 'order-syllables') {
+  const plugin = registry.get(exerciseId);
+  if (!plugin) {
     return;
   }
 
+  state.activeExerciseId = exerciseId;
   router.navigateExercise();
-  state.score = 0;
   refs.score.textContent = '0';
+  plugin.start({ level: 1, resetScore: true });
   setLevel(1);
 }
 
 function init() {
   validateWords(WORDS);
 
-  const homeController = createHomeController({
-    homeScreen: refs.homeScreen,
-    onSelectExercise: openExercise
-  });
-
+  const homeController = createHomeController({ homeScreen: refs.homeScreen, onSelectExercise: openExercise });
   homeController.bindEvents();
 
   refs.levelButtons.forEach((button) => {
@@ -187,7 +175,17 @@ function init() {
   });
 
   refs.nextBtn.addEventListener('click', startRound);
-  refs.homeBtn.addEventListener('click', () => router.navigateHome());
+  refs.nextBtn.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      startRound();
+    }
+  });
+
+  refs.homeBtn.addEventListener('click', () => {
+    router.navigateHome();
+    setFeedback('');
+  });
 
   router.init('home');
 }
