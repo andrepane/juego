@@ -1,34 +1,16 @@
 import { getFilteredWords, getRandomWord, shuffleArray } from '../core/wordUtils.js';
 import { createRecentHistory } from '../core/recentHistory.js';
+import { resolveOrderLevel, resolveOrderMode } from './orderSyllablesConfig.js';
 
-export const ORDER_LEVELS = {
-  1: {
-    id: 1,
-    label: 'Nivel 1',
-    filters: {
-      syllableCount: 2,
-      frequency: [1, 2],
-      structure: ['CV-CV']
-    }
-  },
-  2: {
-    id: 2,
-    label: 'Nivel 2',
-    filters: {
-      syllableCount: 3,
-      frequency: [1, 2],
-      structure: ['CV-CV-CV']
-    }
-  },
-  3: {
-    id: 3,
-    label: 'Nivel 3',
-    filters: {
-      syllableCount: 3,
-      frequency: 3
-    }
+function getLinguisticCandidates(levelConfig) {
+  const base = getFilteredWords(levelConfig.linguisticFilters);
+
+  if (levelConfig.id !== 3) {
+    return base;
   }
-};
+
+  return base.filter((word) => word.structure !== 'CV-CV-CV');
+}
 
 function createSyllablePieces(syllables) {
   return shuffleArray(syllables).map((text, index) => ({ id: `${text}-${index}`, text }));
@@ -58,6 +40,7 @@ function classifyError({ expected, tapped, submitted, target }) {
 export function createOrderSyllablesPlugin() {
   const state = {
     level: 1,
+    mode: 'normal',
     round: null,
     answer: [],
     score: 0,
@@ -75,8 +58,8 @@ export function createOrderSyllablesPlugin() {
   const recentHistory = createRecentHistory(10);
 
   function getCandidates(level) {
-    const config = ORDER_LEVELS[level] ?? ORDER_LEVELS[1];
-    const all = getFilteredWords(config.filters);
+    const config = resolveOrderLevel(level);
+    const all = getLinguisticCandidates(config);
     const fresh = all.filter((word) => !recentHistory.has(word.id));
 
     return {
@@ -87,6 +70,7 @@ export function createOrderSyllablesPlugin() {
 
   function makeRound(level = state.level) {
     const { config, pool } = getCandidates(level);
+    const mode = resolveOrderMode(state.mode);
     const word = getRandomWord(pool);
 
     if (!word) {
@@ -96,6 +80,8 @@ export function createOrderSyllablesPlugin() {
     return {
       level: config.id,
       levelLabel: config.label,
+      mode: mode.id,
+      modeLabel: mode.label,
       word: {
         id: word.id,
         text: word.word,
@@ -110,6 +96,10 @@ export function createOrderSyllablesPlugin() {
   function start(payload = {}) {
     if (Number.isInteger(payload.level)) {
       state.level = payload.level;
+    }
+
+    if (payload.mode !== undefined) {
+      state.mode = resolveOrderMode(payload.mode).id;
     }
 
     if (payload.resetScore) {
@@ -133,6 +123,8 @@ export function createOrderSyllablesPlugin() {
       status: 'ready',
       level: state.round.level,
       levelLabel: state.round.levelLabel,
+      mode: state.round.mode,
+      modeLabel: state.round.modeLabel,
       expectedLength: state.round.expectedLength,
       pieces: state.round.pieces,
       wordId: state.round.word.id,
@@ -209,7 +201,10 @@ export function createOrderSyllablesPlugin() {
     if (payload.level !== undefined) {
       state.level = payload.level;
     }
-    return start({ level: state.level });
+    if (payload.mode !== undefined) {
+      state.mode = resolveOrderMode(payload.mode).id;
+    }
+    return start({ level: state.level, mode: state.mode });
   }
 
   return {
