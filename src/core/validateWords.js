@@ -1,16 +1,8 @@
-const ALLOWED_CATEGORIES = new Set([
-  'animales',
-  'hogar',
-  'comida',
-  'escuela',
-  'cuerpo',
-  'juguetes',
-  'ropa',
-  'naturaleza'
-]);
-
+const ALLOWED_CATEGORIES = new Set(['animales', 'hogar', 'comida', 'escuela', 'cuerpo', 'juguetes', 'ropa', 'naturaleza']);
 const ALLOWED_DIFFICULTIES = new Set([1, 2, 3, 4]);
-const ID_PATTERN = /^lvl\d+_[a-z]+_[a-z0-9áéíóúüñ]+$/i;
+const ALLOWED_FREQUENCIES = new Set([1, 2, 3]);
+const ID_PATTERN = /^lvl(\d+)_([a-z]+)_([a-z0-9áéíóúüñ]+)$/i;
+const STRUCTURE_PATTERN = /^(CV|CVC|VC)(-(CV|CVC|VC))*$/;
 
 function logWordsError(message) {
   console.error('[WORDS ERROR]');
@@ -30,7 +22,6 @@ export function validateWords(words) {
 
   let errors = 0;
   let warnings = 0;
-
   const ids = new Map();
   const wordsByValue = new Map();
 
@@ -43,13 +34,15 @@ export function validateWords(words) {
       return;
     }
 
+    let parsedId = null;
     if (!entry.id || typeof entry.id !== 'string' || entry.id.trim() === '') {
       errors += 1;
       logWordsError(`Empty id in word: ${ref}`);
     } else {
       const normalizedId = entry.id.trim();
+      parsedId = normalizedId.match(ID_PATTERN);
 
-      if (!ID_PATTERN.test(normalizedId)) {
+      if (!parsedId) {
         errors += 1;
         logWordsError(`Malformed id: ${entry.id}`);
       }
@@ -73,22 +66,31 @@ export function validateWords(words) {
       wordsByValue.get(normalizedWord).push(entry);
     }
 
-    if (!entry.category || typeof entry.category !== 'string' || entry.category.trim() === '') {
+    const normalizedCategory = entry.category?.trim().toLowerCase();
+    if (!normalizedCategory) {
       errors += 1;
       logWordsError(`Empty category in word: ${ref}`);
-    } else if (!ALLOWED_CATEGORIES.has(entry.category.trim().toLowerCase())) {
-      warnings += 1;
-      logWordsWarning(`Category not allowed in word ${ref}: ${entry.category}`);
+    } else if (!ALLOWED_CATEGORIES.has(normalizedCategory)) {
+      errors += 1;
+      logWordsError(`Category not allowed in word ${ref}: ${entry.category}`);
     }
 
     if (!entry.structure || typeof entry.structure !== 'string' || entry.structure.trim() === '') {
       errors += 1;
       logWordsError(`Empty structure in word: ${ref}`);
+    } else if (!STRUCTURE_PATTERN.test(entry.structure.trim())) {
+      errors += 1;
+      logWordsError(`Invalid structure format in word ${ref}: ${entry.structure}`);
     }
 
     if (!ALLOWED_DIFFICULTIES.has(entry.difficulty)) {
       errors += 1;
       logWordsError(`Invalid difficulty in word ${ref}: ${entry.difficulty}`);
+    }
+
+    if (!ALLOWED_FREQUENCIES.has(entry.frequency)) {
+      errors += 1;
+      logWordsError(`Invalid frequency in word ${ref}: ${entry.frequency}`);
     }
 
     if (!Array.isArray(entry.syllables) || entry.syllables.length === 0) {
@@ -102,6 +104,11 @@ export function validateWords(words) {
       logWordsError(`Incorrect syllableCount in word: ${ref}`);
     }
 
+    if (entry.structure && entry.syllableCount && entry.structure.split('-').length !== entry.syllableCount) {
+      errors += 1;
+      logWordsError(`Structure and syllableCount mismatch in word: ${ref}`);
+    }
+
     if (entry.initialSyllable !== entry.syllables[0]) {
       errors += 1;
       logWordsError(`Incorrect initialSyllable in word: ${ref}`);
@@ -111,17 +118,29 @@ export function validateWords(words) {
       errors += 1;
       logWordsError(`Incorrect finalSyllable in word: ${ref}`);
     }
+
+    if (parsedId) {
+      const [, levelId, categoryId, wordId] = parsedId;
+      if (Number(levelId) !== entry.difficulty) {
+        errors += 1;
+        logWordsError(`ID level and difficulty mismatch in ${entry.id}`);
+      }
+      if (normalizedCategory && categoryId !== normalizedCategory) {
+        warnings += 1;
+        logWordsWarning(`ID category and category mismatch in ${entry.id}`);
+      }
+      if (entry.word && wordId !== entry.word.toLowerCase()) {
+        warnings += 1;
+        logWordsWarning(`ID word segment and word mismatch in ${entry.id}`);
+      }
+    }
   });
 
   wordsByValue.forEach((entries, normalizedWord) => {
     if (entries.length > 1) {
       const categories = [...new Set(entries.map((item) => item.category || 'sin-categoría'))].join(', ');
       warnings += 1;
-      logWordsWarning(
-        `Duplicate word detected: ${normalizedWord}. Categories: ${categories}. IDs: ${entries
-          .map((item) => item.id)
-          .join(', ')}`
-      );
+      logWordsWarning(`Duplicate word detected: ${normalizedWord}. Categories: ${categories}. IDs: ${entries.map((item) => item.id).join(', ')}`);
     }
   });
 
