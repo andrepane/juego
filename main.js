@@ -4,7 +4,6 @@ import { createHomeController } from './src/ui/home.js';
 import { createRouter } from './src/navigation/router.js';
 import { createExerciseRegistry } from './src/core/exerciseRegistry.js';
 import { createOrderSyllablesPlugin } from './src/exercises/orderSyllablesPlugin.js';
-import { ORDER_MODES } from './src/exercises/orderSyllablesConfig.js';
 
 const refs = {
   appRoot: document.querySelector('#app-root'),
@@ -12,13 +11,13 @@ const refs = {
   exerciseScreen: document.querySelector('#exercise-screen'),
   homeBtn: document.querySelector('#home-btn'),
   levelButtons: document.querySelectorAll('.level-btn'),
-  modeButtons: document.querySelectorAll('.mode-btn'),
   exerciseContainer: document.querySelector('#exercise-container'),
   feedback: document.querySelector('#feedback'),
   score: document.querySelector('#score'),
-  roundWord: document.querySelector('#round-word'),
   levelLabel: document.querySelector('#level-label'),
-  nextBtn: document.querySelector('#next-btn')
+  nextBtn: document.querySelector('#next-btn'),
+  progressText: document.querySelector('#progress-text'),
+  buildWord: document.querySelector('#build-word')
 };
 
 const POSITION_PATTERNS = {
@@ -47,6 +46,8 @@ function updateAnswerSlots(answer = []) {
   slots.forEach((slot, index) => {
     slot.textContent = answer[index]?.toUpperCase() ?? '';
   });
+  refs.progressText.textContent = `${answer.length}/${slots.length || 0}`;
+  refs.buildWord.textContent = answer.length ? answer.map((part) => part.toUpperCase()).join('') : '—';
 }
 
 function renderRound(viewModel) {
@@ -57,7 +58,6 @@ function renderRound(viewModel) {
   }
 
   refs.levelLabel.textContent = viewModel.levelLabel;
-  refs.roundWord.textContent = `${viewModel.expectedLength} sílabas · ${viewModel.modeLabel}`;
 
   const piecesWrap = document.createElement('div');
   piecesWrap.className = 'pieces-cloud';
@@ -82,7 +82,6 @@ function renderRound(viewModel) {
 
   const answerWrap = document.createElement('div');
   answerWrap.className = 'answer-zone';
-  answerWrap.innerHTML = '<p class="answer-zone__label">Construye la palabra</p>';
 
   const slotsWrap = document.createElement('div');
   slotsWrap.className = 'answer-slots';
@@ -153,21 +152,6 @@ function setLevel(level) {
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
-function setMode(mode) {
-  const modeConfig = ORDER_MODES[mode] ?? ORDER_MODES.normal;
-  if (!modeConfig.enabled) {
-    setFeedback('Este modo estará disponible próximamente.', 'error');
-    return;
-  }
-
-  state.currentMode = modeConfig.id;
-  refs.modeButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.mode === modeConfig.id));
-  const plugin = getActivePlugin();
-  if (!plugin) return;
-  renderRound(plugin.start({ level: state.currentLevel, mode: state.currentMode }));
-  setFeedback('Toca las sílabas en orden para formar una palabra.', '');
-}
-
 function openExercise(exerciseId) {
   const plugin = registry.get(exerciseId);
   if (!plugin) {
@@ -190,10 +174,6 @@ function init() {
 
   refs.levelButtons.forEach((button) => {
     button.addEventListener('click', () => setLevel(Number(button.dataset.level)));
-  });
-
-  refs.modeButtons.forEach((button) => {
-    button.addEventListener('click', () => setMode(button.dataset.mode));
   });
 
   refs.nextBtn.addEventListener('click', startRound);

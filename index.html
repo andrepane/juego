@@ -31,22 +31,21 @@
 
     <section id="exercise-screen" class="view exercise-screen" aria-label="Actividad ordenar sílabas">
       <header class="activity-topbar">
-        <button id="home-btn" class="back-btn" type="button" aria-label="Volver a la portada">Salir</button>
+        <button id="home-btn" class="back-btn" type="button" aria-label="Volver a la portada">Volver</button>
 
-        <div class="top-meta">
-          <p class="eyebrow" id="level-label">Nivel 1</p>
-          <h2 id="round-word">2 sílabas</h2>
+        <div class="hud-item">
+          <span class="hud-label">Nivel</span>
+          <strong id="level-label">Nivel 1</strong>
         </div>
 
-        <div class="top-controls">
-          <div class="mode-tabs" aria-label="Selector de modo">
-            <button class="mode-btn is-active" data-mode="normal">Normal</button>
-            <button class="mode-btn" data-mode="intruders" disabled title="Próximamente">Intrusos</button>
-          </div>
-          <div class="score-box" aria-label="Aciertos acumulados">
-            <span>Aciertos</span>
-            <strong id="score">0</strong>
-          </div>
+        <div class="hud-item hud-item--progress">
+          <span class="hud-label">Progreso</span>
+          <strong id="progress-text">0/2</strong>
+        </div>
+
+        <div class="hud-item hud-item--score" aria-label="Aciertos acumulados">
+          <span class="hud-label">Aciertos</span>
+          <strong id="score">0</strong>
         </div>
       </header>
 
@@ -56,16 +55,20 @@
 
       <footer class="activity-footer">
         <div class="level-tabs" aria-label="Selector de nivel">
-          <button class="level-btn is-active" data-level="1">Nivel 1</button>
-          <button class="level-btn" data-level="2">Nivel 2</button>
-          <button class="level-btn" data-level="3">Nivel 3</button>
+          <button class="level-btn is-active" data-level="1">N1</button>
+          <button class="level-btn" data-level="2">N2</button>
+          <button class="level-btn" data-level="3">N3</button>
+        </div>
+
+        <div class="footer-center">
+          <p class="build-label">Construcción actual</p>
+          <div id="build-word" class="build-word" aria-live="polite">—</div>
+          <p id="feedback" class="feedback" aria-live="polite"></p>
         </div>
 
         <div class="footer-actions">
-          <button id="next-btn" class="secondary-btn">Nueva palabra</button>
+          <button id="next-btn" class="secondary-btn">Nueva</button>
         </div>
-
-        <p id="feedback" class="feedback" aria-live="polite"></p>
       </footer>
     </section>
   </div>
