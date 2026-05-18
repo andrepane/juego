@@ -18,6 +18,10 @@ export function createRouter({ views, root }) {
       element.classList.toggle('is-inactive-view', !isActive);
       element.setAttribute('aria-hidden', String(!isActive));
     });
+
+    const isExerciseMode = state.activeView === VIEWS.exercise;
+    root.classList.toggle('is-exercise-mode', isExerciseMode);
+    document.body.classList.toggle('is-exercise-mode', isExerciseMode);
   }
 
   function navigate(nextView) {
