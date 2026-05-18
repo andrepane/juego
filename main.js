@@ -176,6 +176,7 @@ function openExercise(exerciseId) {
 
   state.activeExerciseId = exerciseId;
   router.navigateExercise();
+  document.body.classList.add('is-activity-mode');
   refs.score.textContent = '0';
   plugin.start({ level: 1, mode: 'normal', resetScore: true });
   setLevel(1);
@@ -205,10 +206,12 @@ function init() {
 
   refs.homeBtn.addEventListener('click', () => {
     router.navigateHome();
+    document.body.classList.remove('is-activity-mode');
     setFeedback('');
   });
 
   router.init('home');
+  document.body.classList.remove('is-activity-mode');
 }
 
 init();
