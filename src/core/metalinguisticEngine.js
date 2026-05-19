@@ -1,36 +1,37 @@
 import { WORDS } from '../data/words/index.js';
+import { syllabifySpanishWord } from './wordProcessor.js';
 
-const VOWELS = new Set(['A', 'E', 'I', 'O', 'U', 'Á', 'É', 'Í', 'Ó', 'Ú', 'Ü']);
 
 const normalize = (raw) => String(raw || '')
   .toUpperCase()
   .normalize('NFD')
   .replace(/[^A-ZÑ]/g, '');
 
+const WORD_SYLLABLES = new Map(
+  WORDS
+    .filter((entry) => entry?.word && Array.isArray(entry?.syllables) && entry.syllables.length > 0)
+    .map((entry) => [
+      normalize(entry.word),
+      entry.syllables
+        .map((part) => normalize(part))
+        .filter(Boolean)
+    ])
+    .filter(([, syllables]) => syllables.length > 0)
+);
+
 function splitSyllables(word) {
   if (!word) return [];
 
-  const letters = [...word];
-  const syllables = [];
-  let current = '';
+  const normalizedWord = normalize(word);
+  const knownSyllables = WORD_SYLLABLES.get(normalizedWord);
+  if (knownSyllables) return [...knownSyllables];
 
-  for (let i = 0; i < letters.length; i += 1) {
-    const letter = letters[i];
-    const next = letters[i + 1];
-    current += letter;
-
-    if (VOWELS.has(letter) && (!next || VOWELS.has(next))) {
-      syllables.push(current);
-      current = '';
-    }
+  const { syllables } = syllabifySpanishWord(normalizedWord);
+  if (Array.isArray(syllables) && syllables.length > 0) {
+    return syllables.map((part) => normalize(part));
   }
 
-  if (current) {
-    if (syllables.length) syllables[syllables.length - 1] += current;
-    else syllables.push(current);
-  }
-
-  return syllables;
+  return [normalizedWord];
 }
 
 function randomOf(list) {
