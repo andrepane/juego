@@ -1,6 +1,6 @@
 export const level1Home = [
   {
-    id: "lvl1_home_casa",
+    id: "lvl1_hogar_casa",
     word: "casa",
     syllables: ["ca", "sa"],
     syllableCount: 2,
@@ -13,7 +13,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_mesa",
+    id: "lvl1_hogar_mesa",
     word: "mesa",
     syllables: ["me", "sa"],
     syllableCount: 2,
@@ -26,7 +26,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_cama",
+    id: "lvl1_hogar_cama",
     word: "cama",
     syllables: ["ca", "ma"],
     syllableCount: 2,
@@ -39,7 +39,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_silla",
+    id: "lvl1_hogar_silla",
     word: "silla",
     syllables: ["si", "lla"],
     syllableCount: 2,
@@ -52,7 +52,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_taza",
+    id: "lvl1_hogar_taza",
     word: "taza",
     syllables: ["ta", "za"],
     syllableCount: 2,
@@ -66,7 +66,7 @@ export const level1Home = [
   },
 
   {
-    id: "lvl1_home_caja",
+    id: "lvl1_hogar_caja",
     word: "caja",
     syllables: ["ca", "ja"],
     syllableCount: 2,
@@ -79,7 +79,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_puerta",
+    id: "lvl1_hogar_puerta",
     word: "puerta",
     syllables: ["puer", "ta"],
     syllableCount: 2,
@@ -92,7 +92,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_techo",
+    id: "lvl1_hogar_techo",
     word: "techo",
     syllables: ["te", "cho"],
     syllableCount: 2,
@@ -105,7 +105,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_suelo",
+    id: "lvl1_hogar_suelo",
     word: "suelo",
     syllables: ["sue", "lo"],
     syllableCount: 2,
@@ -118,7 +118,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_lámpara",
+    id: "lvl1_hogar_lámpara",
     word: "lámpara",
     syllables: ["lám", "pa", "ra"],
     syllableCount: 3,
@@ -132,7 +132,7 @@ export const level1Home = [
   },
 
   {
-    id: "lvl1_home_ventana",
+    id: "lvl1_hogar_ventana",
     word: "ventana",
     syllables: ["ven", "ta", "na"],
     syllableCount: 3,
@@ -145,7 +145,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_cocina",
+    id: "lvl1_hogar_cocina",
     word: "cocina",
     syllables: ["co", "ci", "na"],
     syllableCount: 3,
@@ -158,7 +158,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_cortina",
+    id: "lvl1_hogar_cortina",
     word: "cortina",
     syllables: ["cor", "ti", "na"],
     syllableCount: 3,
@@ -171,7 +171,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_armario",
+    id: "lvl1_hogar_armario",
     word: "armario",
     syllables: ["ar", "ma", "rio"],
     syllableCount: 3,
@@ -184,7 +184,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_espejo",
+    id: "lvl1_hogar_espejo",
     word: "espejo",
     syllables: ["es", "pe", "jo"],
     syllableCount: 3,
@@ -198,7 +198,7 @@ export const level1Home = [
   },
 
   {
-    id: "lvl1_home_alfombra",
+    id: "lvl1_hogar_alfombra",
     word: "alfombra",
     syllables: ["al", "fom", "bra"],
     syllableCount: 3,
@@ -211,7 +211,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_cojín",
+    id: "lvl1_hogar_cojín",
     word: "cojín",
     syllables: ["co", "jín"],
     syllableCount: 2,
@@ -224,7 +224,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_sabana",
+    id: "lvl1_hogar_sabana",
     word: "sábana",
     syllables: ["sá", "ba", "na"],
     syllableCount: 3,
@@ -237,7 +237,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_toalla",
+    id: "lvl1_hogar_toalla",
     word: "toalla",
     syllables: ["to", "a", "lla"],
     syllableCount: 3,
@@ -250,7 +250,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_jabón",
+    id: "lvl1_hogar_jabón",
     word: "jabón",
     syllables: ["ja", "bón"],
     syllableCount: 2,
@@ -264,7 +264,7 @@ export const level1Home = [
   },
 
   {
-    id: "lvl1_home_basura",
+    id: "lvl1_hogar_basura",
     word: "basura",
     syllables: ["ba", "su", "ra"],
     syllableCount: 3,
@@ -277,7 +277,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_estufa",
+    id: "lvl1_hogar_estufa",
     word: "estufa",
     syllables: ["es", "tu", "fa"],
     syllableCount: 3,
@@ -290,7 +290,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_cepillo",
+    id: "lvl1_hogar_cepillo",
     word: "cepillo",
     syllables: ["ce", "pi", "llo"],
     syllableCount: 3,
@@ -303,7 +303,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_cuchara",
+    id: "lvl1_hogar_cuchara",
     word: "cuchara",
     syllables: ["cu", "cha", "ra"],
     syllableCount: 3,
@@ -316,7 +316,7 @@ export const level1Home = [
     image: null
   },
   {
-    id: "lvl1_home_tenedor",
+    id: "lvl1_hogar_tenedor",
     word: "tenedor",
     syllables: ["te", "ne", "dor"],
     syllableCount: 3,

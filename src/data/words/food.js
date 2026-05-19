@@ -1,6 +1,6 @@
 export const level1Food = [
   {
-    id: "lvl1_food_sopa",
+    id: "lvl1_comida_sopa",
     word: "sopa",
     syllables: ["so", "pa"],
     syllableCount: 2,
@@ -13,7 +13,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_papa",
+    id: "lvl1_comida_papa",
     word: "papa",
     syllables: ["pa", "pa"],
     syllableCount: 2,
@@ -26,7 +26,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_queso",
+    id: "lvl1_comida_queso",
     word: "queso",
     syllables: ["que", "so"],
     syllableCount: 2,
@@ -39,7 +39,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_mango",
+    id: "lvl1_comida_mango",
     word: "mango",
     syllables: ["man", "go"],
     syllableCount: 2,
@@ -52,7 +52,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_melon",
+    id: "lvl1_comida_melon",
     word: "melón",
     syllables: ["me", "lón"],
     syllableCount: 2,
@@ -66,7 +66,7 @@ export const level1Food = [
   },
 
   {
-    id: "lvl1_food_tarta",
+    id: "lvl1_comida_tarta",
     word: "tarta",
     syllables: ["tar", "ta"],
     syllableCount: 2,
@@ -79,20 +79,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_galleta",
-    word: "galleta",
-    syllables: ["ga", "lle", "ta"],
-    syllableCount: 3,
-    initialSyllable: "ga",
-    finalSyllable: "ta",
-    difficulty: 1,
-    frequency: 1,
-    category: "comida",
-    structure: "CV-CV-CV",
-    image: null
-  },
-  {
-    id: "lvl1_food_tomate",
+    id: "lvl1_comida_tomate",
     word: "tomate",
     syllables: ["to", "ma", "te"],
     syllableCount: 3,
@@ -105,7 +92,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_patata",
+    id: "lvl1_comida_patata",
     word: "patata",
     syllables: ["pa", "ta", "ta"],
     syllableCount: 3,
@@ -118,7 +105,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_guiso",
+    id: "lvl1_comida_guiso",
     word: "guiso",
     syllables: ["gui", "so"],
     syllableCount: 2,
@@ -132,7 +119,7 @@ export const level1Food = [
   },
 
   {
-    id: "lvl1_food_fresa",
+    id: "lvl1_comida_fresa",
     word: "fresa",
     syllables: ["fre", "sa"],
     syllableCount: 2,
@@ -145,7 +132,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_platano",
+    id: "lvl1_comida_platano",
     word: "plátano",
     syllables: ["plá", "ta", "no"],
     syllableCount: 3,
@@ -158,7 +145,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_naranja",
+    id: "lvl1_comida_naranja",
     word: "naranja",
     syllables: ["na", "ran", "ja"],
     syllableCount: 3,
@@ -171,7 +158,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_manzana",
+    id: "lvl1_comida_manzana",
     word: "manzana",
     syllables: ["man", "za", "na"],
     syllableCount: 3,
@@ -184,7 +171,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_pera",
+    id: "lvl1_comida_pera",
     word: "pera",
     syllables: ["pe", "ra"],
     syllableCount: 2,
@@ -198,7 +185,7 @@ export const level1Food = [
   },
 
   {
-    id: "lvl1_food_kiwi",
+    id: "lvl1_comida_kiwi",
     word: "kiwi",
     syllables: ["ki", "wi"],
     syllableCount: 2,
@@ -211,7 +198,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_limon",
+    id: "lvl1_comida_limon",
     word: "limón",
     syllables: ["li", "món"],
     syllableCount: 2,
@@ -224,7 +211,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_harina",
+    id: "lvl1_comida_harina",
     word: "harina",
     syllables: ["ha", "ri", "na"],
     syllableCount: 3,
@@ -237,7 +224,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_galleta",
+    id: "lvl1_comida_galleta",
     word: "galleta",
     syllables: ["ga", "lle", "ta"],
     syllableCount: 3,
@@ -250,7 +237,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_churro",
+    id: "lvl1_comida_churro",
     word: "churro",
     syllables: ["chu", "rro"],
     syllableCount: 2,
@@ -264,7 +251,7 @@ export const level1Food = [
   },
 
   {
-    id: "lvl1_food_pescado",
+    id: "lvl1_comida_pescado",
     word: "pescado",
     syllables: ["pes", "ca", "do"],
     syllableCount: 3,
@@ -277,7 +264,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_yogur",
+    id: "lvl1_comida_yogur",
     word: "yogur",
     syllables: ["yo", "gur"],
     syllableCount: 2,
@@ -290,7 +277,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_helado",
+    id: "lvl1_comida_helado",
     word: "helado",
     syllables: ["he", "la", "do"],
     syllableCount: 3,
@@ -303,7 +290,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_pan",
+    id: "lvl1_comida_pan",
     word: "pan",
     syllables: ["pan"],
     syllableCount: 1,
@@ -316,7 +303,7 @@ export const level1Food = [
     image: null
   },
   {
-    id: "lvl1_food_arroz",
+    id: "lvl1_comida_arroz",
     word: "arroz",
     syllables: ["a", "rroz"],
     syllableCount: 2,
