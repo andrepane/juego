@@ -31,6 +31,24 @@ body {
 }
 .eyebrow { margin: 0; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
 .word { margin: 0; font-size: clamp(2.6rem, 10vw, 6rem); letter-spacing: 0.1em; }
+.setup-zone {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px;
+  background: rgba(12, 20, 37, 0.6);
+}
+.setup-title { margin: 0 0 10px; color: var(--muted); }
+.setup-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.setup-controls label { display: grid; gap: 6px; font-weight: 600; }
+.setup-controls select {
+  font: inherit;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  background: rgba(7, 13, 25, 0.9);
+  color: var(--text);
+  min-width: 130px;
+}
 .tiles-zone {
   min-height: clamp(130px, 24vw, 180px);
   border: 1px solid var(--line);
@@ -79,7 +97,15 @@ button {
 .feedback.error { color: var(--error); }
 .controls { display: flex; gap: 10px; flex-wrap: wrap; }
 .pulse { animation: pulse .4s ease 0s 2; }
+.shake { animation: shake .35s ease; }
 @keyframes pulse { 50% { transform: scale(1.04); } }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
 
 @media (max-width: 680px) {
   .app { grid-template-rows: auto auto auto auto auto auto; }

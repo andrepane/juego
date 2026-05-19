@@ -11,6 +11,25 @@
     <p class="eyebrow">LEXIA</p>
     <h1 id="word-display" class="word">TOMATE</h1>
 
+    <section id="setup-zone" class="setup-zone" aria-label="Selector inicial">
+      <p class="setup-title">Primero selecciona cuántas sílabas y letras tiene la palabra.</p>
+      <div class="setup-controls">
+        <label>
+          Sílabas
+          <select id="syllables-select">
+            <option value="">Selecciona</option>
+          </select>
+        </label>
+        <label>
+          Letras
+          <select id="letters-select">
+            <option value="">Selecciona</option>
+          </select>
+        </label>
+        <button id="setup-btn" type="button">Validar</button>
+      </div>
+    </section>
+
     <section class="tiles-zone" aria-label="Representación estructural">
       <div id="tiles" class="tiles"></div>
     </section>
