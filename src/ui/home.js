@@ -1,5 +1,6 @@
-export function createHomeController({ homeScreen, onSelectExercise }) {
+export function createHomeController({ homeScreen, onSelectExercise, onOpenAdmin }) {
   const cards = homeScreen.querySelectorAll('[data-exercise]');
+  const adminLink = homeScreen.querySelector('[data-open-admin]');
 
   function bindEvents() {
     cards.forEach((card) => {
@@ -10,6 +11,11 @@ export function createHomeController({ homeScreen, onSelectExercise }) {
 
         onSelectExercise(card.dataset.exercise);
       });
+    });
+
+    adminLink?.addEventListener('click', (event) => {
+      event.preventDefault();
+      onOpenAdmin();
     });
   }
 

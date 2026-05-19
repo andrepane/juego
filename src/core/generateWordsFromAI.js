@@ -53,7 +53,8 @@ export async function generateWordsFromAI({
   fetchImpl = fetch,
   onError = console.error,
   onInfo = console.info,
-  saveToFile = true
+  saveToFile = true,
+  requestPayload = {}
 } = {}) {
   const summary = {
     endpoint,
@@ -63,14 +64,15 @@ export async function generateWordsFromAI({
     written: false,
     outputPath,
     errors: [],
-    rejected: []
+    rejected: [],
+    candidates: []
   };
 
   try {
     const response = await fetchImpl(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify(requestPayload)
     });
 
     if (!response.ok) {
@@ -114,6 +116,7 @@ export async function generateWordsFromAI({
     });
 
     summary.valid = validCandidates.length;
+    summary.candidates = validCandidates;
 
     if (saveToFile) {
       await persistCandidates(outputPath, validCandidates);

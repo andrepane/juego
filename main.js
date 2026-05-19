@@ -1,6 +1,7 @@
 import { validateWords } from './src/core/validateWords.js';
 import { WORDS } from './src/data/words/index.js';
 import { createHomeController } from './src/ui/home.js';
+import { createAdminController } from './src/ui/admin.js';
 import { createRouter } from './src/navigation/router.js';
 import { createExerciseRegistry } from './src/core/exerciseRegistry.js';
 import { createOrderSyllablesPlugin } from './src/exercises/orderSyllablesPlugin.js';
@@ -11,6 +12,7 @@ const refs = {
   appRoot: document.querySelector('#app-root'),
   homeScreen: document.querySelector('#home-screen'),
   exerciseScreen: document.querySelector('#exercise-screen'),
+  adminScreen: document.querySelector('#admin-screen'),
   homeBtn: document.querySelector('#home-btn'),
   levelButtons: document.querySelectorAll('.level-btn'),
   modeButtons: document.querySelectorAll('.mode-btn'),
@@ -46,7 +48,7 @@ const state = {
 const registry = createExerciseRegistry();
 registry.register(createOrderSyllablesPlugin());
 
-const router = createRouter({ root: refs.appRoot, views: { home: refs.homeScreen, exercise: refs.exerciseScreen } });
+const router = createRouter({ root: refs.appRoot, views: { home: refs.homeScreen, exercise: refs.exerciseScreen, admin: refs.adminScreen } });
 
 function setFeedback(message, type = '') {
   refs.feedback.textContent = message;
@@ -414,8 +416,17 @@ async function init() {
   await importWordsFromJson();
   validateWords(WORDS);
 
-  const homeController = createHomeController({ homeScreen: refs.homeScreen, onSelectExercise: openExercise });
+  const homeController = createHomeController({
+    homeScreen: refs.homeScreen,
+    onSelectExercise: openExercise,
+    onOpenAdmin: () => {
+      window.location.hash = '/admin';
+    }
+  });
   homeController.bindEvents();
+
+  const adminController = createAdminController({ adminScreen: refs.adminScreen });
+  adminController.bindEvents();
 
   refs.levelButtons.forEach((button) => {
     button.addEventListener('click', () => {
@@ -442,7 +453,22 @@ async function init() {
   });
 
   updateProgress();
+
+  const syncRouteFromHash = () => {
+    const route = window.location.hash.replace('#/', '');
+    if (route === 'admin') {
+      router.navigateAdmin();
+      document.body.classList.remove('is-activity-mode');
+      return;
+    }
+
+    router.navigateHome();
+  };
+
+  window.addEventListener('hashchange', syncRouteFromHash);
+
   router.init('home');
+  syncRouteFromHash();
   document.body.classList.remove('is-activity-mode');
 }
 

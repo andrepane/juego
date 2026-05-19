@@ -1,6 +1,7 @@
 const VIEWS = {
   home: 'home',
-  exercise: 'exercise'
+  exercise: 'exercise',
+  admin: 'admin'
 };
 
 export function createRouter({ views, root }) {
@@ -47,6 +48,7 @@ export function createRouter({ views, root }) {
     init,
     navigateHome: () => navigate(VIEWS.home),
     navigateExercise: () => navigate(VIEWS.exercise),
+    navigateAdmin: () => navigate(VIEWS.admin),
     getActiveView: () => state.activeView
   };
 }
