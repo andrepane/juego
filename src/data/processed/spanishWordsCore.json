@@ -1,0 +1,47 @@
+[
+  {
+    "word": "casa",
+    "syllables": ["ca", "sa"],
+    "syllableCount": 2,
+    "frequency": 1,
+    "structure": "CV-CV",
+    "difficulty": 1,
+    "category": "hogar"
+  },
+  {
+    "word": "mesa",
+    "syllables": ["me", "sa"],
+    "syllableCount": 2,
+    "frequency": 1,
+    "structure": "CV-CV",
+    "difficulty": 1,
+    "category": "hogar"
+  },
+  {
+    "word": "pelota",
+    "syllables": ["pe", "lo", "ta"],
+    "syllableCount": 3,
+    "frequency": 1,
+    "structure": "CV-CV-CV",
+    "difficulty": 2,
+    "category": "juguetes"
+  },
+  {
+    "word": "plato",
+    "syllables": ["pla", "to"],
+    "syllableCount": 2,
+    "frequency": 2,
+    "structure": "CCV-CV",
+    "difficulty": 3,
+    "category": "comida"
+  },
+  {
+    "word": "pan",
+    "syllables": ["pan"],
+    "syllableCount": 1,
+    "frequency": 1,
+    "structure": "CVC",
+    "difficulty": 1,
+    "category": "comida"
+  }
+]
