@@ -1,6 +1,6 @@
 export const level1Animals = [
   {
-    id: "lvl1_animal_pato",
+    id: "lvl1_animales_pato",
     word: "pato",
     syllables: ["pa", "to"],
     syllableCount: 2,
@@ -13,7 +13,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_gato",
+    id: "lvl1_animales_gato",
     word: "gato",
     syllables: ["ga", "to"],
     syllableCount: 2,
@@ -26,7 +26,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_mono",
+    id: "lvl1_animales_mono",
     word: "mono",
     syllables: ["mo", "no"],
     syllableCount: 2,
@@ -39,7 +39,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_sapo",
+    id: "lvl1_animales_sapo",
     word: "sapo",
     syllables: ["sa", "po"],
     syllableCount: 2,
@@ -52,7 +52,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_lobo",
+    id: "lvl1_animales_lobo",
     word: "lobo",
     syllables: ["lo", "bo"],
     syllableCount: 2,
@@ -65,7 +65,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_vaca",
+    id: "lvl1_animales_vaca",
     word: "vaca",
     syllables: ["va", "ca"],
     syllableCount: 2,
@@ -78,7 +78,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_foca",
+    id: "lvl1_animales_foca",
     word: "foca",
     syllables: ["fo", "ca"],
     syllableCount: 2,
@@ -91,7 +91,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_rana",
+    id: "lvl1_animales_rana",
     word: "rana",
     syllables: ["ra", "na"],
     syllableCount: 2,
@@ -104,7 +104,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_puma",
+    id: "lvl1_animales_puma",
     word: "puma",
     syllables: ["pu", "ma"],
     syllableCount: 2,
@@ -117,21 +117,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_foca",
-    word: "foca",
-    syllables: ["fo", "ca"],
-    syllableCount: 2,
-    initialSyllable: "fo",
-    finalSyllable: "ca",
-    difficulty: 1,
-    frequency: 2,
-    category: "animales",
-    structure: "CV-CV",
-    image: null
-  },
-
-  {
-    id: "lvl1_animal_conejo",
+    id: "lvl1_animales_conejo",
     word: "conejo",
     syllables: ["co", "ne", "jo"],
     syllableCount: 3,
@@ -144,7 +130,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_oveja",
+    id: "lvl1_animales_oveja",
     word: "oveja",
     syllables: ["o", "ve", "ja"],
     syllableCount: 3,
@@ -157,7 +143,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_ballena",
+    id: "lvl1_animales_ballena",
     word: "ballena",
     syllables: ["ba", "lle", "na"],
     syllableCount: 3,
@@ -170,7 +156,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_mariposa",
+    id: "lvl1_animales_mariposa",
     word: "mariposa",
     syllables: ["ma", "ri", "po", "sa"],
     syllableCount: 4,
@@ -183,7 +169,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_gusano",
+    id: "lvl1_animales_gusano",
     word: "gusano",
     syllables: ["gu", "sa", "no"],
     syllableCount: 3,
@@ -196,7 +182,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_paloma",
+    id: "lvl1_animales_paloma",
     word: "paloma",
     syllables: ["pa", "lo", "ma"],
     syllableCount: 3,
@@ -209,7 +195,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_tortuga",
+    id: "lvl1_animales_tortuga",
     word: "tortuga",
     syllables: ["tor", "tu", "ga"],
     syllableCount: 3,
@@ -222,7 +208,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_caballo",
+    id: "lvl1_animales_caballo",
     word: "caballo",
     syllables: ["ca", "ba", "llo"],
     syllableCount: 3,
@@ -235,7 +221,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_pollito",
+    id: "lvl1_animales_pollito",
     word: "pollito",
     syllables: ["po", "lli", "to"],
     syllableCount: 3,
@@ -248,7 +234,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_abeja",
+    id: "lvl1_animales_abeja",
     word: "abeja",
     syllables: ["a", "be", "ja"],
     syllableCount: 3,
@@ -262,7 +248,7 @@ export const level1Animals = [
   },
 
   {
-    id: "lvl1_animal_burro",
+    id: "lvl1_animales_burro",
     word: "burro",
     syllables: ["bu", "rro"],
     syllableCount: 2,
@@ -275,7 +261,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_cebra",
+    id: "lvl1_animales_cebra",
     word: "cebra",
     syllables: ["ce", "bra"],
     syllableCount: 2,
@@ -288,7 +274,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_tigre",
+    id: "lvl1_animales_tigre",
     word: "tigre",
     syllables: ["ti", "gre"],
     syllableCount: 2,
@@ -301,7 +287,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_leon",
+    id: "lvl1_animales_leon",
     word: "león",
     syllables: ["le", "ón"],
     syllableCount: 2,
@@ -314,7 +300,7 @@ export const level1Animals = [
     image: null
   },
   {
-    id: "lvl1_animal_ratón",
+    id: "lvl1_animales_ratón",
     word: "ratón",
     syllables: ["ra", "tón"],
     syllableCount: 2,

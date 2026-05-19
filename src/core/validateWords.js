@@ -2,7 +2,14 @@ const ALLOWED_CATEGORIES = new Set(['animales', 'hogar', 'comida', 'escuela', 'c
 const ALLOWED_DIFFICULTIES = new Set([1, 2, 3, 4]);
 const ALLOWED_FREQUENCIES = new Set([1, 2, 3]);
 const ID_PATTERN = /^lvl(\d+)_([a-z]+)_([a-z0-9áéíóúüñ]+)$/i;
-const STRUCTURE_PATTERN = /^(CV|CVC|VC)(-(CV|CVC|VC))*$/;
+const STRUCTURE_PATTERN = /^[CV]+(-[CV]+)*$/;
+
+function normalizeComparableText(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
 
 function logWordsError(message) {
   console.error('[WORDS ERROR]');
@@ -129,7 +136,7 @@ export function validateWords(words) {
         warnings += 1;
         logWordsWarning(`ID category and category mismatch in ${entry.id}`);
       }
-      if (entry.word && wordId !== entry.word.toLowerCase()) {
+      if (entry.word && normalizeComparableText(wordId) !== normalizeComparableText(entry.word)) {
         warnings += 1;
         logWordsWarning(`ID word segment and word mismatch in ${entry.id}`);
       }
