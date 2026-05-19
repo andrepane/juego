@@ -462,3 +462,36 @@ button:focus-visible { outline: 3px solid #2f75f3; outline-offset: 2px; }
   border-color: transparent;
   color: #fff;
 }
+
+.finish-dialog__panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.finish-dialog__actions {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.finish-dialog__actions .confirm-dialog__btn {
+  width: 100%;
+  justify-self: stretch;
+}
+
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1200;
+  transition: opacity 200ms ease;
+}
+
+.confetti-canvas.is-visible {
+  opacity: 1;
+}

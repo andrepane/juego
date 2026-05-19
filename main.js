@@ -24,10 +24,16 @@ const refs = {
   nextBtn: document.querySelector('#next-btn'),
   levelConfirmDialog: document.querySelector('#level-confirm'),
   levelConfirmAccept: document.querySelector('#confirm-accept'),
-  levelConfirmCancel: document.querySelector('#confirm-cancel')
+  levelConfirmCancel: document.querySelector('#confirm-cancel'),
+  finishDialog: document.querySelector('#round-finish'),
+  finishHome: document.querySelector('#finish-home'),
+  finishChangeLevel: document.querySelector('#finish-change-level'),
+  finishRepeat: document.querySelector('#finish-repeat'),
+  confettiCanvas: document.querySelector('#confetti-canvas')
 };
 
 const SESSION_WORDS_TARGET = 15;
+const CONFETTI_DURATION_MS = 2200;
 
 const state = {
   activeExerciseId: null,
@@ -44,6 +50,112 @@ const router = createRouter({ root: refs.appRoot, views: { home: refs.homeScreen
 function setFeedback(message, type = '') {
   refs.feedback.textContent = message;
   refs.feedback.className = `feedback ${type ? `is-${type}` : ''}`;
+}
+
+function runConfetti() {
+  const canvas = refs.confettiCanvas;
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  const colors = ['#f94144', '#f3722c', '#f9c74f', '#90be6d', '#43aa8b', '#577590', '#9b5de5'];
+  const pieces = [];
+  const count = 120;
+
+  const resize = () => {
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * ratio;
+    canvas.height = window.innerHeight * ratio;
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  };
+
+  resize();
+  canvas.classList.add('is-visible');
+
+  for (let i = 0; i < count; i += 1) {
+    pieces.push({
+      x: Math.random() * window.innerWidth,
+      y: -20 - Math.random() * window.innerHeight * 0.5,
+      size: 6 + Math.random() * 10,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: -2 + Math.random() * 4,
+      vy: 2 + Math.random() * 4,
+      tilt: Math.random() * Math.PI,
+      spin: -0.2 + Math.random() * 0.4
+    });
+  }
+
+  const start = performance.now();
+
+  const draw = () => {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    pieces.forEach((piece) => {
+      piece.x += piece.vx;
+      piece.y += piece.vy;
+      piece.tilt += piece.spin;
+      piece.vy += 0.02;
+
+      ctx.save();
+      ctx.translate(piece.x, piece.y);
+      ctx.rotate(piece.tilt);
+      ctx.fillStyle = piece.color;
+      ctx.fillRect(-piece.size / 2, -piece.size / 2, piece.size, piece.size * 0.62);
+      ctx.restore();
+    });
+
+    if (performance.now() - start < CONFETTI_DURATION_MS) {
+      window.requestAnimationFrame(draw);
+      return;
+    }
+
+    canvas.classList.remove('is-visible');
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  };
+
+  window.requestAnimationFrame(draw);
+}
+
+function handleRoundFinishedChoice(choice) {
+  if (choice === 'home') {
+    router.navigateHome();
+    document.body.classList.remove('is-activity-mode');
+    setFeedback('');
+    return;
+  }
+
+  if (choice === 'levels') {
+    resetSessionProgress();
+    renderRound(getActivePlugin()?.start({ level: state.currentLevel, mode: state.currentMode, resetScore: true }));
+    setFeedback('Elige otro nivel para empezar una nueva ronda.', 'success');
+    return;
+  }
+
+  resetSessionProgress();
+  renderRound(getActivePlugin()?.start({ level: state.currentLevel, mode: state.currentMode, resetScore: true }));
+  setFeedback('Nueva ronda iniciada. ¡A por otras 15!', 'success');
+}
+
+function showRoundFinishedDialog() {
+  const dialog = refs.finishDialog;
+  if (!dialog || typeof dialog.showModal !== 'function') {
+    handleRoundFinishedChoice(window.confirm('Terminaste la ronda. Aceptar = repetir nivel, Cancelar = salir al inicio.') ? 'repeat' : 'home');
+    return;
+  }
+
+  runConfetti();
+
+  const onClose = () => {
+    dialog.removeEventListener('close', onClose);
+    handleRoundFinishedChoice(dialog.returnValue || 'repeat');
+  };
+
+  dialog.addEventListener('close', onClose);
+  dialog.showModal();
+  refs.finishRepeat?.focus();
 }
 
 
@@ -206,6 +318,7 @@ function handleSyllableTap(button) {
     if (state.completedWords >= SESSION_WORDS_TARGET) {
       state.isSessionFinished = true;
       setFeedback('¡Muy bien! Terminaste el ejercicio de 15 palabras.', 'success');
+      showRoundFinishedDialog();
       return;
     }
 
@@ -219,7 +332,7 @@ function startRound() {
   if (!plugin) return;
 
   if (state.isSessionFinished) {
-    setFeedback('Sesión completada (15/15). Cambia de nivel o vuelve al inicio para comenzar otra.', 'success');
+    setFeedback('Sesión completada (15/15). Elige una opción en el popup para continuar.', 'success');
     return;
   }
 
