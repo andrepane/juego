@@ -147,17 +147,19 @@ function normalizeForId(word) {
 
 function normalizeRawEntry(rawEntry) {
   if (typeof rawEntry === 'string') {
-    return { word: cleanForWord(rawEntry), frequencyRank: null };
+    return { word: cleanForWord(rawEntry), frequencyRank: null, category: 'general' };
   }
 
   return {
     word: cleanForWord(rawEntry?.word),
-    frequencyRank: rawEntry?.frequencyRank ?? null
+    frequencyRank: rawEntry?.frequencyRank ?? null,
+    category: normalizeWordValue(rawEntry?.category) || 'general'
   };
 }
 
 export function enrichRawWord(rawEntry, category = 'general') {
   const base = normalizeRawEntry(rawEntry);
+  const resolvedCategory = category === 'general' ? base.category : category;
   const { syllables, needsReview: syllableReview } = syllabifySpanishWord(base.word);
   const structure = getSyllableStructure(syllables);
   const frequency = getFrequencyLevel(base.frequencyRank);
@@ -169,12 +171,12 @@ export function enrichRawWord(rawEntry, category = 'general') {
     initialSyllable: syllables[0] ?? '',
     finalSyllable: syllables[syllables.length - 1] ?? '',
     frequency,
-    category,
+    category: resolvedCategory,
     structure
   };
 
   const difficulty = getDifficultyFromWordData(wordData);
-  const id = `lvl${difficulty}_${category}_${normalizeForId(base.word)}`;
+  const id = `lvl${difficulty}_${resolvedCategory}_${normalizeForId(base.word)}`;
   const needsReview =
     syllableReview ||
     !/^([CV]+)(-[CV]+)*$/.test(structure) ||

@@ -1,12 +1,11 @@
 import { validateWords } from './src/core/validateWords.js';
-import { WORDS } from './src/data/words/index.js';
+import { WORDS, loadWordsDataset } from './src/data/words/index.js';
 import { createHomeController } from './src/ui/home.js';
 import { createAdminController } from './src/ui/admin.js';
 import { createRouter } from './src/navigation/router.js';
 import { createExerciseRegistry } from './src/core/exerciseRegistry.js';
 import { createOrderSyllablesPlugin } from './src/exercises/orderSyllablesPlugin.js';
 import { ORDER_MODES } from './src/exercises/orderSyllablesConfig.js';
-import { importWordsFromJson } from './src/core/importWords.js';
 
 const refs = {
   appRoot: document.querySelector('#app-root'),
@@ -413,8 +412,9 @@ function openExercise(exerciseId) {
 }
 
 async function init() {
-  await importWordsFromJson();
+  const loadSummary = await loadWordsDataset();
   validateWords(WORDS);
+  console.info('[WORDS FLOW] Validación del juego completada', loadSummary);
 
   const homeController = createHomeController({
     homeScreen: refs.homeScreen,

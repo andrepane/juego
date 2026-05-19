@@ -1,0 +1,87 @@
+[
+  {
+    "id": "lvl3_hogar_casa",
+    "word": "casa",
+    "syllables": [
+      "ca",
+      "sa"
+    ],
+    "syllableCount": 2,
+    "initialSyllable": "ca",
+    "finalSyllable": "sa",
+    "frequency": 3,
+    "category": "hogar",
+    "structure": "CV-CV",
+    "difficulty": 3,
+    "image": null,
+    "needsReview": false
+  },
+  {
+    "id": "lvl3_hogar_mesa",
+    "word": "mesa",
+    "syllables": [
+      "me",
+      "sa"
+    ],
+    "syllableCount": 2,
+    "initialSyllable": "me",
+    "finalSyllable": "sa",
+    "frequency": 3,
+    "category": "hogar",
+    "structure": "CV-CV",
+    "difficulty": 3,
+    "image": null,
+    "needsReview": false
+  },
+  {
+    "id": "lvl3_juguetes_pelota",
+    "word": "pelota",
+    "syllables": [
+      "pe",
+      "lo",
+      "ta"
+    ],
+    "syllableCount": 3,
+    "initialSyllable": "pe",
+    "finalSyllable": "ta",
+    "frequency": 3,
+    "category": "juguetes",
+    "structure": "CV-CV-CV",
+    "difficulty": 3,
+    "image": null,
+    "needsReview": false
+  },
+  {
+    "id": "lvl3_comida_plato",
+    "word": "plato",
+    "syllables": [
+      "pla",
+      "to"
+    ],
+    "syllableCount": 2,
+    "initialSyllable": "pla",
+    "finalSyllable": "to",
+    "frequency": 3,
+    "category": "comida",
+    "structure": "CCV-CV",
+    "difficulty": 3,
+    "image": null,
+    "needsReview": false
+  },
+  {
+    "id": "lvl3_comida_pan",
+    "word": "pan",
+    "syllables": [
+      "pan"
+    ],
+    "syllableCount": 1,
+    "initialSyllable": "pan",
+    "finalSyllable": "pan",
+    "frequency": 3,
+    "category": "comida",
+    "structure": "CVC",
+    "difficulty": 3,
+    "image": null,
+    "needsReview": false
+  }
+]

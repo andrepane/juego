@@ -45,6 +45,12 @@ function createSyllablePieces(syllables) {
 export function createOrderSyllablesRound(level = 1) {
   const config = resolveOrderLevel(level);
   const candidates = getLinguisticCandidates(config);
+  console.info('[WORDS FLOW] Generación de ronda', {
+    level: config.id,
+    filters: config.linguisticFilters,
+    candidates: candidates.length
+  });
+
   const word = getRandomWord(candidates);
 
   if (!word) {
