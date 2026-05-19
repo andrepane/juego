@@ -9,8 +9,31 @@ function getLinguisticCandidates(levelConfig) {
   return base.filter((word) => word.structure !== 'CV-CV-CV');
 }
 
+function hasSameOrder(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((item, index) => item === right[index]);
+}
+
+function ensureReorderedSyllables(syllables) {
+  if (!Array.isArray(syllables) || syllables.length <= 1) {
+    return [...syllables];
+  }
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const candidate = shuffleArray(syllables);
+    if (!hasSameOrder(candidate, syllables)) {
+      return candidate;
+    }
+  }
+
+  return [...syllables.slice(1), syllables[0]];
+}
+
 function createSyllablePieces(syllables) {
-  const shuffled = shuffleArray(syllables);
+  const shuffled = ensureReorderedSyllables(syllables);
 
   return shuffled.map((text, index) => ({
     id: `${text}-${index}`,

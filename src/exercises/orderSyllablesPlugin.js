@@ -12,8 +12,42 @@ function getLinguisticCandidates(levelConfig) {
   return base.filter((word) => word.structure !== 'CV-CV-CV');
 }
 
-function createSyllablePieces(syllables) {
-  return shuffleArray(syllables).map((text, index) => ({ id: `${text}-${index}`, text }));
+function hasSameOrder(left, right) {
+  if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((item, index) => item === right[index]);
+}
+
+function ensureReorderedSyllables(syllables, previousOrder = null) {
+  if (!Array.isArray(syllables) || syllables.length <= 1) {
+    return [...syllables];
+  }
+
+  const blockedOrders = [syllables, previousOrder].filter(Boolean);
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const candidate = shuffleArray(syllables);
+    const isBlocked = blockedOrders.some((order) => hasSameOrder(candidate, order));
+
+    if (!isBlocked) {
+      return candidate;
+    }
+  }
+
+  const rotated = [...syllables.slice(1), syllables[0]];
+  if (!blockedOrders.some((order) => hasSameOrder(rotated, order))) {
+    return rotated;
+  }
+
+  const reversed = [...syllables].reverse();
+  return reversed;
+}
+
+function createSyllablePieces(syllables, previousOrder = null) {
+  const shuffled = ensureReorderedSyllables(syllables, previousOrder);
+  return shuffled.map((text, index) => ({ id: `${text}-${index}`, text }));
 }
 
 function classifyError({ expected, tapped, submitted, target }) {
@@ -52,7 +86,8 @@ export function createOrderSyllablesPlugin() {
         omision: 0,
         orden_incorrecto: 0
       }
-    }
+    },
+    lastPiecesOrder: null
   };
 
   const recentHistory = createRecentHistory(10);
@@ -87,7 +122,7 @@ export function createOrderSyllablesPlugin() {
         text: word.word,
         syllables: [...word.syllables]
       },
-      pieces: createSyllablePieces(word.syllables),
+      pieces: createSyllablePieces(word.syllables, state.lastPiecesOrder),
       expectedLength: word.syllables.length,
       correctAnswer: word.syllables.join('-')
     };
@@ -112,6 +147,7 @@ export function createOrderSyllablesPlugin() {
 
     state.answer = [];
     state.round = makeRound(state.level);
+    state.lastPiecesOrder = state.round ? state.round.pieces.map((piece) => piece.text) : null;
 
     if (!state.round) {
       return { status: 'empty' };
