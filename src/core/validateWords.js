@@ -1,4 +1,4 @@
-const ALLOWED_CATEGORIES = new Set(['animales', 'hogar', 'comida', 'escuela', 'cuerpo', 'juguetes', 'ropa', 'naturaleza']);
+const ALLOWED_CATEGORIES = new Set(['animales', 'hogar', 'comida', 'escuela', 'cuerpo', 'juguetes', 'ropa', 'naturaleza', 'general']);
 const ALLOWED_DIFFICULTIES = new Set([1, 2, 3, 4]);
 const ALLOWED_FREQUENCIES = new Set([1, 2, 3]);
 const ID_PATTERN = /^lvl(\d+)_([a-z]+)_([a-z0-9áéíóúüñ]+)$/i;
@@ -124,6 +124,11 @@ export function validateWords(words) {
     if (entry.finalSyllable !== entry.syllables[entry.syllables.length - 1]) {
       errors += 1;
       logWordsError(`Incorrect finalSyllable in word: ${ref}`);
+    }
+
+    if (entry.needsReview === true) {
+      warnings += 1;
+      logWordsWarning(`Word flagged for manual review: ${ref}`);
     }
 
     if (parsedId) {
