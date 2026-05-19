@@ -27,12 +27,6 @@ const refs = {
   levelConfirmCancel: document.querySelector('#confirm-cancel')
 };
 
-const POSITION_PATTERNS = {
-  2: ['slot-a', 'slot-b', 'slot-c', 'slot-d', 'slot-e', 'slot-f', 'slot-g', 'slot-h'],
-  3: ['slot-a', 'slot-b', 'slot-c', 'slot-d', 'slot-e', 'slot-f', 'slot-g', 'slot-h', 'slot-i', 'slot-j'],
-  4: ['slot-a', 'slot-b', 'slot-c', 'slot-d', 'slot-e', 'slot-f', 'slot-g', 'slot-h', 'slot-i', 'slot-j', 'slot-k', 'slot-l']
-};
-
 const SESSION_WORDS_TARGET = 15;
 
 const state = {
@@ -41,7 +35,6 @@ const state = {
   currentMode: 'normal',
   completedWords: 0,
   isSessionFinished: false,
-  lastSlotsByPieceCount: {}
 };
 const registry = createExerciseRegistry();
 registry.register(createOrderSyllablesPlugin());
@@ -53,51 +46,51 @@ function setFeedback(message, type = '') {
   refs.feedback.className = `feedback ${type ? `is-${type}` : ''}`;
 }
 
-function getLayoutClass(pieceCount) {
-  return POSITION_PATTERNS[pieceCount] ?? POSITION_PATTERNS[3];
-}
 
-function shuffleLayoutSlots(slots) {
-  const shuffled = [...slots];
+function placePiecesWithoutOverlap(piecesWrap, pieceButtons) {
+  const wrapRect = piecesWrap.getBoundingClientRect();
+  const padding = 14;
+  const placed = [];
 
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
+  pieceButtons.forEach((button) => {
+    const buttonRect = button.getBoundingClientRect();
+    const width = buttonRect.width;
+    const height = buttonRect.height;
 
-  return shuffled;
-}
+    const maxLeft = Math.max(padding, wrapRect.width - width - padding);
+    const maxTop = Math.max(padding, wrapRect.height - height - padding);
 
-function pickRoundSlots(pieceCount) {
-  const availableSlots = getLayoutClass(pieceCount);
-  const previousSlots = state.lastSlotsByPieceCount[pieceCount] ?? [];
-  const shuffled = shuffleLayoutSlots(availableSlots);
-  const selected = [];
+    let best = null;
+    let bestOverlap = Number.POSITIVE_INFINITY;
 
-  for (const slot of shuffled) {
-    if (selected.length >= pieceCount) {
-      break;
-    }
-    if (!previousSlots.includes(slot)) {
-      selected.push(slot);
-    }
-  }
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      const left = padding + Math.random() * Math.max(1, maxLeft - padding);
+      const top = padding + Math.random() * Math.max(1, maxTop - padding);
+      const candidate = { left, top, width, height };
 
-  if (selected.length < pieceCount) {
-    for (const slot of shuffled) {
-      if (selected.length >= pieceCount) {
+      let overlapArea = 0;
+      for (const item of placed) {
+        const overlapX = Math.max(0, Math.min(candidate.left + candidate.width, item.left + item.width) - Math.max(candidate.left, item.left));
+        const overlapY = Math.max(0, Math.min(candidate.top + candidate.height, item.top + item.height) - Math.max(candidate.top, item.top));
+        overlapArea += overlapX * overlapY;
+      }
+
+      if (overlapArea === 0) {
+        best = candidate;
         break;
       }
-      if (!selected.includes(slot)) {
-        selected.push(slot);
+
+      if (overlapArea < bestOverlap) {
+        bestOverlap = overlapArea;
+        best = candidate;
       }
     }
-  }
 
-  state.lastSlotsByPieceCount[pieceCount] = selected;
-  return selected;
+    placed.push(best);
+    button.style.left = `${best.left}px`;
+    button.style.top = `${best.top}px`;
+  });
 }
-
 
 function updateProgress() {
   const progress = Math.min(state.completedWords, SESSION_WORDS_TARGET);
@@ -110,7 +103,6 @@ function updateProgress() {
 function resetSessionProgress() {
   state.completedWords = 0;
   state.isSessionFinished = false;
-  state.lastSlotsByPieceCount = {};
   refs.score.textContent = '0';
   updateProgress();
 }
@@ -134,12 +126,12 @@ function renderRound(viewModel) {
 
   const piecesWrap = document.createElement('div');
   piecesWrap.className = 'pieces-cloud';
-  const slots = pickRoundSlots(viewModel.pieces.length);
+  const pieceButtons = [];
 
-  viewModel.pieces.forEach((piece, index) => {
+  viewModel.pieces.forEach((piece) => {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `syllable-piece ${slots[index] ?? 'slot-c'}`;
+    button.className = 'syllable-piece';
     button.textContent = piece.text.toUpperCase();
     button.dataset.syllable = piece.text;
     button.setAttribute('aria-label', `Sílaba ${piece.text.toUpperCase()}`);
@@ -151,6 +143,7 @@ function renderRound(viewModel) {
       }
     });
     piecesWrap.appendChild(button);
+    pieceButtons.push(button);
   });
 
   const answerWrap = document.createElement('div');
@@ -170,6 +163,7 @@ function renderRound(viewModel) {
   answerWrap.appendChild(slotsWrap);
   refs.exerciseContainer.innerHTML = '';
   refs.exerciseContainer.append(piecesWrap, answerWrap);
+  placePiecesWithoutOverlap(piecesWrap, pieceButtons);
   updateAnswerSlots(viewModel.answer);
   piecesWrap.querySelector('.syllable-piece')?.focus();
 }
