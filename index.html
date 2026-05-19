@@ -74,6 +74,44 @@
         <p id="feedback" class="feedback" aria-live="polite"></p>
       </footer>
     </section>
+
+    <section id="admin-screen" class="view panel admin-screen" aria-label="Admin de corpus IA">
+      <p class="eyebrow">Herramienta interna</p>
+      <h2>Admin · Generación IA</h2>
+      <p class="subtitle">Genera candidatas con Magic Loops, revisa resultados y decide importación manual.</p>
+
+      <form id="admin-ai-form" class="admin-form">
+        <label>Categoría
+          <input name="category" value="animales" required />
+        </label>
+        <label>Estructura
+          <input name="structure" value="CV-CV" required />
+        </label>
+        <label>Dificultad
+          <input name="difficulty" type="number" min="1" max="4" value="1" required />
+        </label>
+        <label>Frequency
+          <input name="frequency" type="number" min="1" max="3" value="1" required />
+        </label>
+        <label>Número de palabras
+          <input name="count" type="number" min="1" max="100" value="20" required />
+        </label>
+        <div class="admin-actions">
+          <button id="generate-ai-batch-btn" type="submit" class="secondary-btn">Generar lote IA</button>
+          <button id="import-valid-btn" type="button" class="secondary-btn" disabled>Importar palabras válidas</button>
+        </div>
+      </form>
+
+      <p id="admin-status" class="admin-status" aria-live="polite"></p>
+      <ul id="admin-summary" class="admin-summary"></ul>
+
+      <div class="admin-preview-grid">
+        <section><h3>Válidas</h3><ul id="admin-valid-list"></ul></section>
+        <section><h3>Duplicadas</h3><ul id="admin-duplicate-list"></ul></section>
+        <section><h3>Inválidas</h3><ul id="admin-invalid-list"></ul></section>
+      </div>
+    </section>
+
   </div>
 
   <dialog id="level-confirm" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">

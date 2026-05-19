@@ -61,6 +61,62 @@ function buildId(entry) {
   return `lvl${entry.difficulty}_${entry.category}_${entry.word}`;
 }
 
+export function importWordsFromArray(payload) {
+  const summary = { added: [], rejected: [], errors: [] };
+
+  if (!Array.isArray(payload)) {
+    summary.errors.push('El JSON de importación debe ser un array.');
+    return summary;
+  }
+
+  const existingIds = new Set(WORDS.map((entry) => entry.id));
+  const existingWords = new Set(WORDS.map((entry) => normalizeText(entry.word)));
+
+  payload.forEach((rawEntry, index) => {
+    const sanitized = sanitizeWordEntry(rawEntry);
+    const id = buildId(sanitized);
+
+    if (existingWords.has(sanitized.word)) {
+      const reason = `Duplicado detectado: "${sanitized.word}" ya existe. Se omite.`;
+      summary.rejected.push({ index, word: sanitized.word || `index:${index}`, reason });
+      console.warn(`[WORDS IMPORT][SKIP] ${reason}`);
+      return;
+    }
+
+    const validationErrors = validateImportEntry(sanitized);
+
+    if (existingIds.has(id)) {
+      validationErrors.push(`ID duplicado generado automáticamente: ${id}.`);
+    }
+
+    if (validationErrors.length > 0) {
+      summary.rejected.push({ index, word: sanitized.word || `index:${index}`, reason: validationErrors.join(' ') });
+      return;
+    }
+
+    const nextWord = {
+      id,
+      word: sanitized.word,
+      syllables: sanitized.syllables,
+      syllableCount: sanitized.syllableCount,
+      initialSyllable: sanitized.initialSyllable,
+      finalSyllable: sanitized.finalSyllable,
+      difficulty: sanitized.difficulty,
+      frequency: sanitized.frequency,
+      category: sanitized.category,
+      structure: sanitized.structure,
+      image: sanitized.image ?? null
+    };
+
+    WORDS.push(nextWord);
+    existingIds.add(id);
+    existingWords.add(sanitized.word);
+    summary.added.push(nextWord);
+  });
+
+  return summary;
+}
+
 export async function importWordsFromJson(jsonPath = './src/data/imports/newWords.json') {
   const summary = { added: [], rejected: [], errors: [] };
 
@@ -69,52 +125,10 @@ export async function importWordsFromJson(jsonPath = './src/data/imports/newWord
     if (!response.ok) throw new Error(`No se pudo leer ${jsonPath} (${response.status}).`);
 
     const payload = await response.json();
-    if (!Array.isArray(payload)) throw new Error('El JSON de importación debe ser un array.');
-
-    const existingIds = new Set(WORDS.map((entry) => entry.id));
-    const existingWords = new Set(WORDS.map((entry) => normalizeText(entry.word)));
-
-    payload.forEach((rawEntry, index) => {
-      const sanitized = sanitizeWordEntry(rawEntry);
-      const id = buildId(sanitized);
-
-      if (existingWords.has(sanitized.word)) {
-        const reason = `Duplicado detectado: "${sanitized.word}" ya existe. Se omite.`;
-        summary.rejected.push({ index, word: sanitized.word || `index:${index}`, reason });
-        console.warn(`[WORDS IMPORT][SKIP] ${reason}`);
-        return;
-      }
-
-      const validationErrors = validateImportEntry(sanitized);
-
-      if (existingIds.has(id)) {
-        validationErrors.push(`ID duplicado generado automáticamente: ${id}.`);
-      }
-
-      if (validationErrors.length > 0) {
-        summary.rejected.push({ index, word: sanitized.word || `index:${index}`, reason: validationErrors.join(' ') });
-        return;
-      }
-
-      const nextWord = {
-        id,
-        word: sanitized.word,
-        syllables: sanitized.syllables,
-        syllableCount: sanitized.syllableCount,
-        initialSyllable: sanitized.initialSyllable,
-        finalSyllable: sanitized.finalSyllable,
-        difficulty: sanitized.difficulty,
-        frequency: sanitized.frequency,
-        category: sanitized.category,
-        structure: sanitized.structure,
-        image: sanitized.image ?? null
-      };
-
-      WORDS.push(nextWord);
-      existingIds.add(id);
-      existingWords.add(sanitized.word);
-      summary.added.push(nextWord);
-    });
+    const importSummary = importWordsFromArray(payload);
+    summary.added = importSummary.added;
+    summary.rejected = importSummary.rejected;
+    summary.errors = importSummary.errors;
   } catch (error) {
     summary.errors.push(error.message);
     console.error('[WORDS IMPORT][ERROR]', error);
