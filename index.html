@@ -88,6 +88,22 @@
     </form>
   </dialog>
 
+
+  <dialog id="round-finish" class="confirm-dialog" aria-labelledby="round-finish-title" aria-describedby="round-finish-text">
+    <form method="dialog" class="confirm-dialog__panel finish-dialog__panel">
+      <p class="confirm-dialog__eyebrow">¡Ronda completada!</p>
+      <h3 id="round-finish-title">Terminaste las 15 palabras 🎉</h3>
+      <p id="round-finish-text">Elige qué quieres hacer ahora.</p>
+      <div class="finish-dialog__actions">
+        <button id="finish-home" class="confirm-dialog__btn is-ghost" value="home">Salir al inicio</button>
+        <button id="finish-change-level" class="confirm-dialog__btn is-ghost" value="levels">Elegir otro nivel</button>
+        <button id="finish-repeat" class="confirm-dialog__btn is-primary" value="repeat">Repetir nivel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <canvas id="confetti-canvas" class="confetti-canvas" aria-hidden="true"></canvas>
+
   <script type="module" src="main.js"></script>
 </body>
 </html>

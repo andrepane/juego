@@ -90,7 +90,7 @@ export function createOrderSyllablesPlugin() {
     lastPiecesOrder: null
   };
 
-  const recentHistory = createRecentHistory(10);
+  const recentHistory = createRecentHistory(15);
 
   function getCandidates(level) {
     const config = resolveOrderLevel(level);
