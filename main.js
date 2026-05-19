@@ -416,7 +416,13 @@ async function init() {
   await importWordsFromJson();
   validateWords(WORDS);
 
-  const homeController = createHomeController({ homeScreen: refs.homeScreen, onSelectExercise: openExercise });
+  const homeController = createHomeController({
+    homeScreen: refs.homeScreen,
+    onSelectExercise: openExercise,
+    onOpenAdmin: () => {
+      window.location.hash = '/admin';
+    }
+  });
   homeController.bindEvents();
 
   const adminController = createAdminController({ adminScreen: refs.adminScreen });

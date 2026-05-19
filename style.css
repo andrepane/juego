@@ -528,3 +528,26 @@ button:focus-visible { outline: 3px solid #2f75f3; outline-offset: 2px; }
 .admin-status { min-height: 24px; margin: 0; font-weight: 700; }
 .admin-status.is-error { color: var(--error); }
 .admin-status.is-success { color: var(--success); }
+
+
+.home-admin-link-wrap {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.home-admin-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px dashed rgba(111, 79, 59, 0.38);
+  color: #5e4b3f;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: .86rem;
+}
+
+.home-admin-link:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
