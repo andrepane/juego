@@ -16,12 +16,17 @@ const refs = {
   answerInput: document.querySelector('#answer-input'),
   submitBtn: document.querySelector('#submit-answer'),
   feedback: document.querySelector('#feedback'),
-  reveal: document.querySelector('#reveal')
+  reveal: document.querySelector('#reveal'),
+  visualSupport: document.querySelector('#visual-support'),
+  supportTitle: document.querySelector('#support-title'),
+  supportActions: document.querySelector('#support-actions'),
+  supportBoxes: document.querySelector('#support-boxes')
 };
 
 const state = {
   session: null,
-  challengeIndex: 0
+  challengeIndex: 0,
+  supportPendingFor: null
 };
 
 function goTo(view) {
@@ -38,6 +43,54 @@ function currentChallenge() {
   return state.session?.challenges[state.challengeIndex] || null;
 }
 
+function resetVisualSupport() {
+  state.supportPendingFor = null;
+  refs.visualSupport.classList.add('hidden');
+  refs.supportActions.innerHTML = '';
+  refs.supportBoxes.innerHTML = '';
+}
+
+function renderSupportBoxes(total) {
+  refs.supportBoxes.innerHTML = '';
+  for (let index = 0; index < total; index += 1) {
+    const box = document.createElement('span');
+    box.className = 'support-box';
+    box.setAttribute('aria-hidden', 'true');
+    refs.supportBoxes.appendChild(box);
+  }
+}
+
+function showVisualSupport() {
+  const session = state.session;
+  if (!session) return;
+
+  refs.visualSupport.classList.remove('hidden');
+  refs.supportTitle.textContent = 'Elige apoyo visual para continuar.';
+  refs.supportActions.innerHTML = '';
+
+  const supportModes = [
+    { key: 'syllables', label: 'Sílabas', count: session.syllableCount },
+    { key: 'letters', label: 'Letras', count: session.letters.length }
+  ];
+
+  supportModes.forEach((mode) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'support-choice-btn';
+    btn.textContent = `${mode.label} (${mode.count})`;
+    btn.addEventListener('click', () => {
+      refs.supportTitle.textContent = `${mode.label}: ${mode.count} piezas visuales.`;
+      renderSupportBoxes(mode.count);
+      setFeedback('ok', '¡Correcto! Observa la estructura y continúa.');
+      setTimeout(() => {
+        resetVisualSupport();
+        nextChallenge();
+      }, 650);
+    });
+    refs.supportActions.appendChild(btn);
+  });
+}
+
 function renderChallenge() {
   const challenge = currentChallenge();
   if (!challenge) {
@@ -48,6 +101,7 @@ function renderChallenge() {
     refs.answerInput.classList.add('hidden');
     refs.submitBtn.classList.add('hidden');
     refs.reveal.textContent = '';
+    resetVisualSupport();
     setFeedback('ok', 'Excelente trabajo metalingüístico.');
     return;
   }
@@ -57,6 +111,7 @@ function renderChallenge() {
   refs.prompt.textContent = challenge.prompt;
   refs.answerInput.value = '';
   refs.reveal.textContent = '';
+  resetVisualSupport();
   setFeedback('idle', 'Piensa y responde.');
 
   if (challenge.type === 'choice') {
@@ -94,8 +149,13 @@ function attemptAnswer(rawValue) {
   const isCorrect = engine.validateAnswer(challenge, rawValue);
 
   if (isCorrect) {
+    if (challenge.key === 'count_syllables' || challenge.key === 'count_letters') {
+      state.supportPendingFor = challenge.key;
+      showVisualSupport();
+      return;
+    }
+
     setFeedback('ok', '¡Correcto!');
-    refs.reveal.textContent = `Resultado: ${challenge.answer}`;
     nextChallenge();
     return;
   }

@@ -44,7 +44,11 @@ function pickRandom(values) {
 }
 
 function normalizeAnswer(value) {
-  return normalizeInput(value).replace(/\s+/g, '');
+  return String(value || '')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9Ñ]/g, '');
 }
 
 function createChoiceOptions(correctValue, fallbackValues = []) {
@@ -122,7 +126,7 @@ function buildSession(baseWord) {
     answer: letters.filter((letter) => letter !== removableLetter).join('') || '∅'
   });
 
-  return { word, syllables, letters, challenges };
+  return { word, syllables, syllableCount: syllables.length, letters, challenges };
 }
 
 function validateAnswer(challenge, userAnswer) {
