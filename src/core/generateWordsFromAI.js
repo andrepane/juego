@@ -1,4 +1,4 @@
-const MAGIC_LOOPS_ENDPOINT = 'https://magicloops.dev/api/loop/b42d7ccf-12d8-490f-83a6-c2e4d5d29d2e/run';
+const MAGIC_LOOPS_ENDPOINT = 'https://magicloops.dev/api/loop/aea151c4-e470-4236-970c-b6232786c816/run?input=Hello+World';
 const DEFAULT_OUTPUT_PATH = './src/data/imports/newWords.json';
 
 function normalizeWord(value) {
@@ -69,11 +69,14 @@ export async function generateWordsFromAI({
   };
 
   try {
-    const response = await fetchImpl(endpoint, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(requestPayload)
-    });
+    const hasPayload = Object.keys(requestPayload || {}).length > 0;
+    const response = await fetchImpl(endpoint, hasPayload
+      ? {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(requestPayload)
+      }
+      : { method: 'GET' });
 
     if (!response.ok) {
       throw new Error(`Magic Loops devolvió ${response.status} ${response.statusText}`);
