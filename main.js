@@ -5,6 +5,7 @@ import { createRouter } from './src/navigation/router.js';
 import { createExerciseRegistry } from './src/core/exerciseRegistry.js';
 import { createOrderSyllablesPlugin } from './src/exercises/orderSyllablesPlugin.js';
 import { ORDER_MODES } from './src/exercises/orderSyllablesConfig.js';
+import { importWordsFromJson } from './src/core/importWords.js';
 
 const refs = {
   appRoot: document.querySelector('#app-root'),
@@ -409,7 +410,8 @@ function openExercise(exerciseId) {
   setFeedback('Toca las sílabas en orden para formar una palabra.', '');
 }
 
-function init() {
+async function init() {
+  await importWordsFromJson();
   validateWords(WORDS);
 
   const homeController = createHomeController({ homeScreen: refs.homeScreen, onSelectExercise: openExercise });
@@ -444,4 +446,4 @@ function init() {
   document.body.classList.remove('is-activity-mode');
 }
 
-init();
+void init();
