@@ -3,63 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LEXIA · Metalingüística</title>
+  <title>LEXIA · Manipulación metalingüística</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app" class="app-shell">
-    <section id="home" class="view is-active">
-      <p class="eyebrow">LEXIA</p>
-      <h1>Entrenamiento metalingüístico</h1>
-      <p class="lead">Una sola experiencia inmersiva para pensar, manipular y transformar palabras reales o inventadas.</p>
-      <button id="start-btn" class="primary-btn" type="button">Iniciar actividad</button>
+  <main class="app" aria-label="Actividad metalingüística">
+    <p class="eyebrow">LEXIA</p>
+    <h1 id="word-display" class="word">TOMATE</h1>
+
+    <section class="tiles-zone" aria-label="Representación estructural">
+      <div id="tiles" class="tiles"></div>
     </section>
 
-    <section id="metalinguistica" class="view activity" aria-label="Actividad metalingüística">
-      <header class="activity-header">
-        <button id="exit-btn" class="ghost-btn" type="button">Salir</button>
-        <div>
-          <p class="eyebrow">Sesión activa</p>
-          <h2 id="progress">Reto 1 de 1</h2>
-        </div>
-      </header>
+    <p id="instruction" class="instruction">Quita la sílaba del medio.</p>
 
-      <main class="activity-main">
-        <section class="base-word-card">
-          <label for="base-word">Palabra base o pseudopalabra</label>
-          <div class="input-row">
-            <input id="base-word" maxlength="20" value="PELOTA" />
-            <button id="generate-btn" class="primary-btn" type="button">Nueva sesión</button>
-          </div>
-        </section>
+    <form id="answer-form" class="answer-form" autocomplete="off">
+      <input id="answer-input" type="text" placeholder="Escribe la palabra resultante" maxlength="24" required />
+      <button type="submit">Comprobar</button>
+    </form>
 
-        <section class="focus-card">
-          <p class="eyebrow">Palabra foco</p>
-          <h3 id="focus-word">PELOTA</h3>
-        </section>
+    <p id="feedback" class="feedback idle">Piensa la palabra y escríbela.</p>
 
-        <section class="challenge-card">
-          <p id="prompt" class="prompt">¿Cuántas sílabas tiene?</p>
-
-          <div id="choice-options" class="choice-grid"></div>
-
-          <div class="answer-row">
-            <input id="answer-input" class="hidden" type="text" placeholder="Escribe tu respuesta" autocomplete="off" />
-            <button id="submit-answer" class="ghost-btn hidden" type="button">Responder</button>
-          </div>
-
-          <p id="feedback" class="feedback idle">Piensa y responde.</p>
-          <p id="reveal" class="reveal"></p>
-
-          <section id="visual-support" class="visual-support hidden" aria-live="polite">
-            <p id="support-title" class="support-title">Elige apoyo visual para continuar.</p>
-            <div id="support-actions" class="support-actions"></div>
-            <div id="support-boxes" class="support-boxes"></div>
-          </section>
-        </section>
-      </main>
-    </section>
-  </div>
+    <div class="controls" role="group" aria-label="Controles">
+      <button id="mode-btn" type="button">Modo: Sílabas</button>
+      <button id="next-btn" type="button">Nueva consigna</button>
+      <button id="word-btn" type="button">Nueva palabra</button>
+    </div>
+  </main>
 
   <script type="module" src="main.js"></script>
 </body>
