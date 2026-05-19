@@ -1,0 +1,12 @@
+export const RAW_SPANISH_WORDS = [
+  { word: 'casa', frequencyRank: 120 },
+  { word: 'mesa', frequencyRank: 340 },
+  { word: 'pelota', frequencyRank: 850 },
+  { word: 'plato', frequencyRank: 1100 },
+  { word: 'pan', frequencyRank: 90 },
+  'zapato',
+  'camino',
+  'escuela',
+  'juego',
+  'puerta'
+];
