@@ -3,148 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LEXIA</title>
+  <title>LEXIA · Metalingüística</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app-root" class="app">
-    <section id="home-screen" class="view panel home-screen">
-      <p class="eyebrow">Plataforma educativa</p>
+  <div id="app" class="app-shell">
+    <section id="home" class="view is-active">
+      <p class="eyebrow">Home</p>
       <h1>LEXIA</h1>
-      <p class="subtitle">Una experiencia interactiva para practicar habilidades lingüísticas con ejercicios breves, claros y progresivos.</p>
-
-      <div class="home-admin-link-wrap">
-        <a class="home-admin-link" data-open-admin="true" href="#/admin" aria-label="Abrir herramienta interna de administración">Admin interno IA</a>
-      </div>
-
-      <nav class="exercise-menu" aria-label="Menú de ejercicios">
-        <button type="button" class="exercise-card" data-exercise="order-syllables">
-          <strong>Ordenar sílabas</strong>
-          <span>Organiza sílabas para formar palabras correctamente.</span>
-        </button>
-        <button type="button" class="exercise-card is-disabled" data-status="coming-soon" disabled>
-          <strong>Intruso silábico</strong>
-          <span>Próximamente.</span>
-        </button>
-        <button type="button" class="exercise-card is-disabled" data-status="coming-soon" disabled>
-          <strong>Memoria</strong>
-          <span>Próximamente.</span>
-        </button>
-      </nav>
+      <p class="lead">Entrenamiento metalingüístico unificado para sílabas, letras y pseudopalabras desde un único motor.</p>
+      <button id="start-btn" class="primary-btn" type="button">Entrar a Metalingüística</button>
     </section>
 
-    <section id="exercise-screen" class="view exercise-screen" aria-label="Actividad ordenar sílabas">
-      <header class="activity-topbar">
-        <button id="home-btn" class="back-btn" type="button" aria-label="Volver a la portada">Salir</button>
-
-        <div class="top-meta">
-          <p class="eyebrow" id="level-label">Nivel 1</p>
-          <h2 id="round-word">2 sílabas</h2>
-        </div>
-
-        <div class="top-controls">
-          <div class="mode-tabs" aria-label="Selector de modo">
-            <button class="mode-btn is-active" data-mode="normal">Normal</button>
-            <button class="mode-btn" data-mode="intruders" disabled title="Próximamente">Intrusos</button>
-          </div>
-          <div class="score-box" aria-label="Aciertos acumulados">
-            <span>Aciertos</span>
-            <strong id="score">0</strong>
-          </div>
-          <div class="progress-box" aria-label="Progreso del ejercicio de sílabas">
-            <span id="progress-label">0/15</span>
-            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0" aria-labelledby="progress-label">
-              <div id="progress-fill" class="progress-fill"></div>
-            </div>
-          </div>
+    <section id="metalinguistica" class="view activity" aria-label="Actividad metalingüística">
+      <header class="activity-header">
+        <button id="exit-btn" class="ghost-btn" type="button">Salir</button>
+        <div>
+          <p class="eyebrow">Metalingüística</p>
+          <h2>Motor lingüístico único</h2>
         </div>
       </header>
 
-      <main class="activity-stage">
-        <div id="exercise-container" class="exercise-container"></div>
+      <main class="activity-main">
+        <div class="word-input-card">
+          <label for="base-word">Palabra base o pseudopalabra</label>
+          <div class="input-row">
+            <input id="base-word" maxlength="20" value="PELOTA" />
+            <button id="generate-btn" class="primary-btn" type="button">Generar dinámicas</button>
+          </div>
+          <p class="hint">Escribe cualquier estructura (real o inventada) y el motor genera manipulaciones automáticamente.</p>
+        </div>
+
+        <section id="base-preview" class="base-preview"></section>
+        <section id="challenge-list" class="challenge-list"></section>
       </main>
-
-      <footer class="activity-footer">
-        <div class="level-tabs" aria-label="Selector de nivel">
-          <button class="level-btn is-active" data-level="1">Nivel 1</button>
-          <button class="level-btn" data-level="2">Nivel 2</button>
-          <button class="level-btn" data-level="3">Nivel 3</button>
-        </div>
-
-        <div class="footer-actions">
-          <button id="next-btn" class="secondary-btn">Nueva palabra</button>
-        </div>
-
-        <p id="feedback" class="feedback" aria-live="polite"></p>
-      </footer>
     </section>
-
-    <section id="admin-screen" class="view panel admin-screen" aria-label="Admin de corpus IA">
-      <p class="eyebrow">Herramienta interna</p>
-      <h2>Admin · Generación IA</h2>
-      <p class="subtitle">Genera candidatas con Magic Loops, revisa resultados y decide importación manual.</p>
-
-      <form id="admin-ai-form" class="admin-form">
-        <label>Categoría
-          <input name="category" value="animales" required />
-        </label>
-        <label>Estructura
-          <input name="structure" value="CV-CV" required />
-        </label>
-        <label>Dificultad
-          <input name="difficulty" type="number" min="1" max="4" value="1" required />
-        </label>
-        <label>Frequency
-          <input name="frequency" type="number" min="1" max="3" value="1" required />
-        </label>
-        <label>Número de palabras
-          <input name="count" type="number" min="1" max="100" value="20" required />
-        </label>
-        <div class="admin-actions">
-          <button id="generate-ai-batch-btn" type="submit" class="secondary-btn">Generar lote IA</button>
-          <button id="import-valid-btn" type="button" class="secondary-btn" disabled>Importar palabras válidas</button>
-        </div>
-      </form>
-
-      <p id="admin-status" class="admin-status" aria-live="polite"></p>
-      <ul id="admin-summary" class="admin-summary"></ul>
-
-      <div class="admin-preview-grid">
-        <section><h3>Válidas</h3><ul id="admin-valid-list"></ul></section>
-        <section><h3>Duplicadas</h3><ul id="admin-duplicate-list"></ul></section>
-        <section><h3>Inválidas</h3><ul id="admin-invalid-list"></ul></section>
-      </div>
-    </section>
-
   </div>
-
-  <dialog id="level-confirm" class="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
-    <form method="dialog" class="confirm-dialog__panel">
-      <p class="confirm-dialog__eyebrow">Cambiar nivel</p>
-      <h3 id="confirm-title">¿Interrumpir actividad actual?</h3>
-      <p id="confirm-text">Llevas avances en esta ronda. Si cambias de nivel ahora, se reiniciará tu progreso de la sesión.</p>
-      <div class="confirm-dialog__actions">
-        <button id="confirm-cancel" class="confirm-dialog__btn is-ghost" value="cancel">Seguir aquí</button>
-        <button id="confirm-accept" class="confirm-dialog__btn is-primary" value="accept">Sí, cambiar nivel</button>
-      </div>
-    </form>
-  </dialog>
-
-
-  <dialog id="round-finish" class="confirm-dialog" aria-labelledby="round-finish-title" aria-describedby="round-finish-text">
-    <form method="dialog" class="confirm-dialog__panel finish-dialog__panel">
-      <p class="confirm-dialog__eyebrow">¡Ronda completada!</p>
-      <h3 id="round-finish-title">Terminaste las 15 palabras 🎉</h3>
-      <p id="round-finish-text">Elige qué quieres hacer ahora.</p>
-      <div class="finish-dialog__actions">
-        <button id="finish-home" class="confirm-dialog__btn is-ghost" value="home">Salir al inicio</button>
-        <button id="finish-change-level" class="confirm-dialog__btn is-ghost" value="levels">Elegir otro nivel</button>
-        <button id="finish-repeat" class="confirm-dialog__btn is-primary" value="repeat">Repetir nivel</button>
-      </div>
-    </form>
-  </dialog>
-
-  <canvas id="confetti-canvas" class="confetti-canvas" aria-hidden="true"></canvas>
 
   <script type="module" src="main.js"></script>
 </body>
