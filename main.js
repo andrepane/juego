@@ -28,9 +28,9 @@ const refs = {
 };
 
 const POSITION_PATTERNS = {
-  2: ['slot-a', 'slot-d'],
-  3: ['slot-a', 'slot-c', 'slot-e'],
-  4: ['slot-a', 'slot-b', 'slot-d', 'slot-f']
+  2: ['slot-a', 'slot-b', 'slot-c', 'slot-d', 'slot-e', 'slot-f', 'slot-g', 'slot-h'],
+  3: ['slot-a', 'slot-b', 'slot-c', 'slot-d', 'slot-e', 'slot-f', 'slot-g', 'slot-h', 'slot-i', 'slot-j'],
+  4: ['slot-a', 'slot-b', 'slot-c', 'slot-d', 'slot-e', 'slot-f', 'slot-g', 'slot-h', 'slot-i', 'slot-j', 'slot-k', 'slot-l']
 };
 
 const SESSION_WORDS_TARGET = 15;
@@ -40,7 +40,8 @@ const state = {
   currentLevel: 1,
   currentMode: 'normal',
   completedWords: 0,
-  isSessionFinished: false
+  isSessionFinished: false,
+  lastSlotsByPieceCount: {}
 };
 const registry = createExerciseRegistry();
 registry.register(createOrderSyllablesPlugin());
@@ -67,6 +68,36 @@ function shuffleLayoutSlots(slots) {
   return shuffled;
 }
 
+function pickRoundSlots(pieceCount) {
+  const availableSlots = getLayoutClass(pieceCount);
+  const previousSlots = state.lastSlotsByPieceCount[pieceCount] ?? [];
+  const shuffled = shuffleLayoutSlots(availableSlots);
+  const selected = [];
+
+  for (const slot of shuffled) {
+    if (selected.length >= pieceCount) {
+      break;
+    }
+    if (!previousSlots.includes(slot)) {
+      selected.push(slot);
+    }
+  }
+
+  if (selected.length < pieceCount) {
+    for (const slot of shuffled) {
+      if (selected.length >= pieceCount) {
+        break;
+      }
+      if (!selected.includes(slot)) {
+        selected.push(slot);
+      }
+    }
+  }
+
+  state.lastSlotsByPieceCount[pieceCount] = selected;
+  return selected;
+}
+
 
 function updateProgress() {
   const progress = Math.min(state.completedWords, SESSION_WORDS_TARGET);
@@ -79,6 +110,7 @@ function updateProgress() {
 function resetSessionProgress() {
   state.completedWords = 0;
   state.isSessionFinished = false;
+  state.lastSlotsByPieceCount = {};
   refs.score.textContent = '0';
   updateProgress();
 }
@@ -102,7 +134,7 @@ function renderRound(viewModel) {
 
   const piecesWrap = document.createElement('div');
   piecesWrap.className = 'pieces-cloud';
-  const slots = shuffleLayoutSlots(getLayoutClass(viewModel.pieces.length));
+  const slots = pickRoundSlots(viewModel.pieces.length);
 
   viewModel.pieces.forEach((piece, index) => {
     const button = document.createElement('button');

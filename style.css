@@ -321,6 +321,12 @@ h2 { font-size: clamp(1.05rem, 2vw, 1.32rem); }
 .slot-d { top: 58%; left: 55%; }
 .slot-e { top: 24%; left: 61%; }
 .slot-f { top: 63%; left: 8%; }
+.slot-g { top: 8%; left: 72%; }
+.slot-h { top: 55%; left: 32%; }
+.slot-i { top: 33%; left: 43%; }
+.slot-j { top: 70%; left: 72%; }
+.slot-k { top: 46%; left: 76%; }
+.slot-l { top: 16%; left: 48%; }
 
 .answer-zone {
   background:
