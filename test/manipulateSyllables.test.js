@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildChallengePool, createChallenge, createManipulateSyllablesPlugin } from '../src/exercises/manipulateSyllablesPlugin.js';
+import { buildChallengePool, createBalancedOperationSchedule, createChallenge, createManipulateSyllablesPlugin, selectVariedChallenges } from '../src/exercises/manipulateSyllablesPlugin.js';
 
 const casa = { id: 'casa', word: 'casa', syllables: ['ca', 'sa'], syllableCount: 2, structure: 'CV-CV' };
 const queso = { id: 'queso', word: 'queso', syllables: ['que', 'so'], syllableCount: 2, structure: 'CV-CV' };
@@ -15,7 +15,9 @@ function startOne(word, operation, predicate = () => true, level = word.syllable
   const pool = buildChallengePool({ level, operations: [operation], getWords: () => [word] });
   const index = pool.findIndex(predicate); assert.notEqual(index, -1);
   const game = createManipulateSyllablesPlugin({ getWords: () => [word], allWords: source, random: () => (index + 0.01) / pool.length });
-  return { game, round: game.start({ level, operations: [operation], total: 1 }), challenge: pool[index] };
+  const round = game.start({ level, operations: [operation], total: 1 });
+  const challenge = pool.find((item) => item.baseWord === round.baseWord && item.operation === round.operation && item.instruction === round.instruction);
+  return { game, round, challenge };
 }
 function solve(game, round, challenge) {
   if (round.operation === 'remove') {
@@ -180,4 +182,55 @@ test('distribuye operaciones y mantiene métricas agrupadas', () => {
 
 test('devuelve insufficient con cantidad disponible', () => {
   const game = createManipulateSyllablesPlugin({ getWords: () => [], allWords: source }); assert.deepEqual(game.start({ level: 1, operations: ['remove'], total: 10 }), { status: 'insufficient', available: 0, requested: 10 });
+});
+
+test('planifica operaciones equilibradas, aleatorias y sin consecutivas evitables', () => {
+  const operations = ['remove', 'add', 'replace', 'invert'];
+  for (const total of [5, 8, 10, 15, 20]) {
+    const schedule = createBalancedOperationSchedule(operations, total, () => 0.37);
+    const counts = operations.map((operation) => schedule.filter((item) => item === operation).length);
+    assert.equal(schedule.length, total); assert.ok(Math.max(...counts) - Math.min(...counts) <= 1);
+    assert.ok(schedule.every((item, index) => index === 0 || item !== schedule[index - 1]));
+  }
+  assert.notDeepEqual(createBalancedOperationSchedule(operations, 8, () => 0), createBalancedOperationSchedule(operations, 8, () => 0.9));
+});
+
+test('planifica una operación y un subconjunto sin repetir si sobran operaciones', () => {
+  assert.deepEqual(createBalancedOperationSchedule(['remove'], 5, () => 0), Array(5).fill('remove'));
+  const subset = createBalancedOperationSchedule(['remove', 'add', 'replace', 'invert'], 2, () => 0.6);
+  assert.equal(new Set(subset).size, 2);
+  const two = createBalancedOperationSchedule(['remove', 'add'], 7, () => 0.2);
+  assert.deepEqual([...new Set(two)].sort(), ['add', 'remove']);
+});
+
+test('prioriza palabras distintas, repite tras agotarlas y no repite retos', () => {
+  const pool = buildChallengePool({ level: 1, operations: ['remove'], getWords: () => [casa, queso] });
+  const selection = selectVariedChallenges(pool, Array(4).fill('remove'), () => 0);
+  assert.equal(selection.status, 'ready');
+  assert.notEqual(selection.challenges[0].baseWord, selection.challenges[1].baseWord);
+  assert.ok(selection.challenges.every((item, index) => index === 0 || item.baseWord !== selection.challenges[index - 1].baseWord));
+  assert.equal(new Set(selection.challenges.map((item) => item.id)).size, 4);
+  assert.equal(selectVariedChallenges(pool.slice(0, 1), ['remove', 'remove'], () => 0).status, 'insufficient');
+});
+
+test('movimientos, deshacer, reiniciar y contexto se registran por ronda y operación', () => {
+  const { game, round, challenge } = startOne(queso, 'remove', c => c.position === 1);
+  assert.equal(round.targetContext, 'final');
+  game.submit({ type: 'select-extra', pieceId: 'invalid' });
+  game.submit({ type: 'reset' });
+  game.submit({ type: 'remove-piece', pieceId: round.originalPieces[0].id });
+  game.submit({ type: 'undo' });
+  game.submit({ type: 'remove-piece', pieceId: round.originalPieces[1].id });
+  game.submit({ type: 'validate' });
+  const metrics = game.getMetrics();
+  assert.deepEqual([metrics.totalMovements, metrics.totalUndoUses, metrics.totalResetUses], [2, 1, 0]);
+  assert.deepEqual([metrics.byOperation.remove.movements, metrics.results[0].movements, metrics.results[0].undoUses], [2, 2, 1]);
+  assert.equal(metrics.results[0].targetContext, 'final');
+});
+
+test('clasifica posiciones medial e inicial e inversiones full y edges', () => {
+  assert.equal(startOne(tomate, 'remove', c => c.position === 1).round.targetContext, 'medial');
+  assert.equal(startOne(casa, 'add', c => c.position === 0, 2).round.targetContext, 'initial');
+  assert.equal(startOne(tomate, 'invert', c => c.variant === 'full', 3).round.targetContext, 'full');
+  assert.equal(startOne(tomate, 'invert', c => c.variant === 'edges', 3).round.targetContext, 'edges');
 });

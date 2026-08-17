@@ -1,4 +1,4 @@
-import { getAllWords, getFilteredWords, normalizeSpanish } from '../core/wordUtils.js';
+import { getFilteredWords, normalizeSpanish } from '../core/wordUtils.js';
 import { MANIPULATION_OPERATIONS, SAFE_SYLLABLES, resolveManipulationLevel } from './manipulateSyllablesConfig.js';
 
 const POSITION_NAMES = ['primera', 'segunda', 'tercera', 'cuarta', 'quinta'];
@@ -81,15 +81,42 @@ export function buildChallengePool({ level = 1, operations = Object.keys(MANIPUL
   return pool.filter((challenge) => challenge.expected.length && !sameText(challenge.expectedText, challenge.baseWord));
 }
 
-function selectBalanced(pool, operations, total, random) {
-  const groups = Object.fromEntries(operations.map((operation) => [operation, pool.filter((item) => item.operation === operation)]));
-  const selected = [];
-  for (let index = 0; index < total; index += 1) {
-    const candidates = groups[operations[index % operations.length]];
-    if (!candidates.length) break;
-    selected.push(candidates.splice(Math.floor(random() * candidates.length), 1)[0]);
+function pick(items, random) { return items.length === 1 ? items[0] : items[Math.floor(random() * items.length)]; }
+
+export function createBalancedOperationSchedule(operations, total, random = Math.random) {
+  const unique = [...new Set(operations)];
+  if (!unique.length || total <= 0) return [];
+  const counts = Object.fromEntries(unique.map((operation) => [operation, Math.floor(total / unique.length)]));
+  const remainderOrder = [...unique];
+  for (let i = remainderOrder.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1)); [remainderOrder[i], remainderOrder[j]] = [remainderOrder[j], remainderOrder[i]];
   }
-  return selected;
+  for (let i = 0; i < total % unique.length; i += 1) counts[remainderOrder[i]] += 1;
+  const schedule = [];
+  while (schedule.length < total) {
+    const available = unique.filter((operation) => counts[operation] > 0);
+    const alternatives = available.filter((operation) => operation !== schedule.at(-1));
+    const candidates = alternatives.length ? alternatives : available;
+    const highest = Math.max(...candidates.map((operation) => counts[operation]));
+    const operation = pick(candidates.filter((item) => counts[item] === highest), random);
+    schedule.push(operation); counts[operation] -= 1;
+  }
+  return schedule;
+}
+
+export function selectVariedChallenges(pool, schedule, random = Math.random) {
+  const selected = []; const identities = new Set(); const usage = new Map(); let previousWord = null;
+  for (const operation of schedule) {
+    let candidates = pool.filter((item) => item.operation === operation && !identities.has(item.id));
+    if (!candidates.length) return { status: 'insufficient', challenges: selected };
+    const minimum = Math.min(...candidates.map((item) => usage.get(item.baseWord) ?? 0));
+    candidates = candidates.filter((item) => (usage.get(item.baseWord) ?? 0) === minimum);
+    const nonImmediate = candidates.filter((item) => item.baseWord !== previousWord);
+    if (nonImmediate.length) candidates = nonImmediate;
+    const challenge = pick(candidates, random); selected.push(challenge); identities.add(challenge.id);
+    usage.set(challenge.baseWord, (usage.get(challenge.baseWord) ?? 0) + 1); previousWord = challenge.baseWord;
+  }
+  return { status: 'ready', challenges: selected, wordUsage: Object.fromEntries(usage) };
 }
 
 const helperInstructions = {
@@ -99,10 +126,10 @@ const helperInstructions = {
   invert: 'Pulsa dos fichas para intercambiar sus posiciones'
 };
 
-export function createManipulateSyllablesPlugin({ random = Math.random, getWords = getFilteredWords, allWords = getAllWords } = {}) {
+export function createManipulateSyllablesPlugin({ random = Math.random, getWords = getFilteredWords } = {}) {
   const state = { challenges: [], index: 0, currentPieces: [], history: [], selectedPieceId: null, completed: false,
-    firstTry: true, incorrectAttempts: 0, results: [], lastValidatedFingerprint: null, announcement: '', validationState: 'unvalidated' };
-  const realWords = new Set(allWords().map((word) => normalizeSpanish(word.word)));
+    firstTry: true, incorrectAttempts: 0, results: [], lastValidatedFingerprint: null, announcement: '', validationState: 'unvalidated',
+    roundMetrics: { movements: 0, undoUses: 0, resetUses: 0 } };
   const current = () => state.challenges[state.index];
   const fingerprint = () => state.currentPieces.map(({ id }) => id).join('|');
   const originalFingerprint = () => current().originalPieces.map(({ id }) => id).join('|');
@@ -119,11 +146,12 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
     return round ? { status, round: state.index + 1, total: state.challenges.length, operation: round.operation,
       baseWord: round.baseWord, original: [...round.original], originalPieces: copy(round.originalPieces), instruction: round.instruction,
       helperInstruction: helperInstructions[round.operation], currentPieces: copy(state.currentPieces), extraPiece: copy(round.extraPiece),
-      extraAvailable: Boolean(round.extraPiece && !extraIsPlaced()), selectedPieceId: state.selectedPieceId, historyLength: state.history.length,
+      extraAvailable: Boolean(round.extraPiece && !extraIsPlaced()), selectedPieceId: state.selectedPieceId, historyLength: state.history.length, isModified: fingerprint() !== originalFingerprint(),
       canValidate: canValidate(), validationState: state.validationState, firstTry: state.firstTry,
       incorrectAttempts: state.incorrectAttempts, roundCompleted: state.completed, announcement: state.announcement,
+      roundMetrics: copy(state.roundMetrics), targetContext: round.operation === 'invert' ? round.variant : round.position === 0 ? 'initial' : round.position === round.original.length || round.position === round.original.length - 1 ? 'final' : 'medial',
       expectedLength: round.expectedPieces.length, expectedText: status === 'correct' ? round.expectedText : undefined,
-      lexicalStatus: status === 'correct' ? (realWords.has(normalizeSpanish(round.expectedText)) ? 'real' : 'invented') : undefined } : { status: 'empty' };
+    } : { status: 'empty' };
   }
   function restoreRound() {
     state.currentPieces = copy(current().originalPieces); state.history = []; state.selectedPieceId = null;
@@ -131,6 +159,7 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
   }
   function recordMove() {
     state.history.push({ currentPieces: copy(state.currentPieces), selectedPieceId: state.selectedPieceId });
+    state.roundMetrics.movements += 1;
   }
   function changed(announcement) {
     state.lastValidatedFingerprint = null; state.validationState = 'unvalidated'; state.announcement = announcement;
@@ -139,10 +168,11 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
   function start({ level = 1, operations = Object.keys(MANIPULATION_OPERATIONS), total = 5 } = {}) {
     const selectedOperations = [...new Set(operations)].filter((item) => MANIPULATION_OPERATIONS[item]);
     const pool = buildChallengePool({ level, operations: selectedOperations, getWords });
-    if (!selectedOperations.length || pool.length < total) return { status: 'insufficient', available: pool.length, requested: total };
-    const chosen = selectBalanced(pool, selectedOperations, total, random);
-    if (chosen.length < total) return { status: 'insufficient', available: chosen.length, requested: total };
-    Object.assign(state, { challenges: chosen, index: 0, completed: false, firstTry: true, incorrectAttempts: 0, results: [] });
+    const schedule = createBalancedOperationSchedule(selectedOperations, total, random);
+    const selection = selectVariedChallenges(pool, schedule, random);
+    if (!selectedOperations.length || selection.status === 'insufficient') return { status: 'insufficient', available: selection.challenges?.length ?? 0, requested: total };
+    Object.assign(state, { challenges: selection.challenges, index: 0, completed: false, firstTry: true, incorrectAttempts: 0, results: [] });
+    state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 };
     restoreRound(); return snapshot();
   }
   function submit({ type, pieceId, slotIndex } = {}) {
@@ -186,32 +216,40 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
     if (type === 'undo') {
       if (!state.history.length) return snapshot('locked');
       const previous = state.history.pop(); state.currentPieces = previous.currentPieces;
-      state.selectedPieceId = ['add', 'replace'].includes(round.operation) ? null : previous.selectedPieceId;
+      state.roundMetrics.undoUses += 1;
+      state.selectedPieceId = null;
       return changed('Último movimiento deshecho');
     }
-    if (type === 'reset') { if (state.completed) return snapshot('locked'); restoreRound(); state.announcement = 'Palabra reiniciada'; return snapshot('progress'); }
+    if (type === 'reset') { if (state.completed || fingerprint() === originalFingerprint()) return snapshot('locked'); state.roundMetrics.resetUses += 1; restoreRound(); state.announcement = 'Palabra reiniciada'; return snapshot('progress'); }
     if (type !== 'validate' || !canValidate()) return snapshot('locked');
     state.lastValidatedFingerprint = fingerprint();
     const correct = state.currentPieces.length === round.expectedPieces.length && state.currentPieces.every((piece, index) =>
       piece.id === round.expectedPieces[index].id && sameText(piece.text, round.expectedPieces[index].text));
     if (!correct) { state.incorrectAttempts += 1; state.firstTry = false; state.validationState = 'incorrect'; state.announcement = ''; return snapshot('incorrect'); }
     state.completed = true; state.validationState = 'correct'; state.announcement = '';
-    state.results.push({ operation: round.operation, baseWord: round.baseWord, instruction: round.instruction, expected: round.expectedText, firstTry: state.firstTry });
+    state.results.push({ operation: round.operation, baseWord: round.baseWord, instruction: round.instruction, result: round.expectedText, expected: round.expectedText,
+      firstTry: state.firstTry, incorrectAttempts: state.incorrectAttempts - state.results.reduce((sum, item) => sum + item.incorrectAttempts, 0),
+      targetContext: snapshot().targetContext, ...copy(state.roundMetrics) });
     return snapshot('correct');
   }
   function next() {
     if (!state.completed) return snapshot('locked');
     if (state.index >= state.challenges.length - 1) return { status: 'complete' };
-    state.index += 1; state.completed = false; state.firstTry = true; restoreRound(); return snapshot();
+    state.index += 1; state.completed = false; state.firstTry = true; state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 }; restoreRound(); return snapshot();
   }
   function getMetrics() {
     const firstTryCorrect = state.results.filter((result) => result.firstTry).length;
     const byOperation = Object.fromEntries(Object.keys(MANIPULATION_OPERATIONS).map((operation) => {
       const results = state.results.filter((result) => result.operation === operation);
-      return [operation, { rounds: results.length, firstTryCorrect: results.filter((result) => result.firstTry).length }];
+      const first = results.filter((result) => result.firstTry).length;
+      return [operation, { rounds: results.length, firstTryCorrect: first, incorrectAttempts: results.reduce((sum, item) => sum + item.incorrectAttempts, 0),
+        firstTryPercentage: results.length ? Math.round(first / results.length * 100) : 0, movements: results.reduce((sum, item) => sum + item.movements, 0),
+        undoUses: results.reduce((sum, item) => sum + item.undoUses, 0), resetUses: results.reduce((sum, item) => sum + item.resetUses, 0) }];
     }));
     return { roundsPlayed: state.results.length, firstTryCorrect, incorrectAttempts: state.incorrectAttempts,
       firstTryPercentage: state.results.length ? Math.round(firstTryCorrect / state.results.length * 100) : 0,
+      totalMovements: state.results.reduce((sum, item) => sum + item.movements, 0), totalUndoUses: state.results.reduce((sum, item) => sum + item.undoUses, 0),
+      totalResetUses: state.results.reduce((sum, item) => sum + item.resetUses, 0),
       byOperation, results: copy(state.results) };
   }
   return { id: 'manipulate-syllables', start, submit, next, getMetrics };
