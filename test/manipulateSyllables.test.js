@@ -3,79 +3,179 @@ import assert from 'node:assert/strict';
 import { buildChallengePool, createChallenge, createManipulateSyllablesPlugin } from '../src/exercises/manipulateSyllablesPlugin.js';
 
 const casa = { id: 'casa', word: 'casa', syllables: ['ca', 'sa'], syllableCount: 2, structure: 'CV-CV' };
+const queso = { id: 'queso', word: 'queso', syllables: ['que', 'so'], syllableCount: 2, structure: 'CV-CV' };
 const tomate = { id: 'tomate', word: 'tomate', syllables: ['to', 'ma', 'te'], syllableCount: 3, structure: 'CV-CV-CV' };
 const patata = { id: 'patata', word: 'patata', syllables: ['pa', 'ta', 'ta'], syllableCount: 3, structure: 'CV-CV-CV' };
 const nino = { id: 'nino', word: 'niño', syllables: ['ni', 'ño'], syllableCount: 2, structure: 'CV-CV' };
 const cafe = { id: 'cafe', word: 'café', syllables: ['ca', 'fé'], syllableCount: 2, structure: 'CV-CV' };
-const words = [casa, tomate, patata, nino, cafe];
+const words = [casa, queso, tomate, patata, nino, cafe];
 const source = () => words;
-const choose = (game, round, expected) => { const used = new Set(); for (const text of expected) { const piece = round.pieces.find((p) => p.text === text && !used.has(p.id)); assert.ok(piece); used.add(piece.id); game.submit({ type: 'tap', pieceId: piece.id }); } };
 
-test('genera soluciones exactas para las cuatro operaciones', () => {
-  assert.equal(createChallenge({ word: tomate, operation: 'remove', position: 1 }).expectedText, 'tote');
-  assert.equal(createChallenge({ word: casa, operation: 'add', position: 0, syllable: 'mi' }).expectedText, 'micasa');
-  assert.equal(createChallenge({ word: tomate, operation: 'replace', position: 1, syllable: 'lu' }).expectedText, 'tolute');
-  assert.equal(createChallenge({ word: casa, operation: 'invert' }).expectedText, 'saca');
+function startOne(word, operation, predicate = () => true, level = word.syllables.length === 3 ? 2 : 1) {
+  const pool = buildChallengePool({ level, operations: [operation], getWords: () => [word] });
+  const index = pool.findIndex(predicate); assert.notEqual(index, -1);
+  const game = createManipulateSyllablesPlugin({ getWords: () => [word], allWords: source, random: () => (index + 0.01) / pool.length });
+  return { game, round: game.start({ level, operations: [operation], total: 1 }), challenge: pool[index] };
+}
+function solve(game, round, challenge) {
+  if (round.operation === 'remove') {
+    const target = challenge.originalPieces.find((piece) => !challenge.expectedPieces.some((expected) => expected.id === piece.id));
+    return game.submit({ type: 'remove-piece', pieceId: target.id });
+  }
+  if (round.operation === 'add') {
+    game.submit({ type: 'select-extra', pieceId: round.extraPiece.id });
+    return game.submit({ type: 'insert-at', slotIndex: challenge.position });
+  }
+  if (round.operation === 'replace') {
+    game.submit({ type: 'select-extra', pieceId: round.extraPiece.id });
+    return game.submit({ type: 'replace-piece', pieceId: round.originalPieces[challenge.position].id });
+  }
+  let state = round;
+  for (let index = 0; index < challenge.expectedPieces.length; index += 1) {
+    if (state.currentPieces[index].id === challenge.expectedPieces[index].id) continue;
+    const other = state.currentPieces.find((piece) => piece.id === challenge.expectedPieces[index].id);
+    game.submit({ type: 'select-swap-piece', pieceId: state.currentPieces[index].id });
+    state = game.submit({ type: 'select-swap-piece', pieceId: other.id });
+  }
+  return state;
+}
+
+test('los retos conservan soluciones, fichas originales y fichas extra con identidad', () => {
+  const remove = createChallenge({ word: tomate, operation: 'remove', position: 1 });
+  const add = createChallenge({ word: casa, operation: 'add', position: 1, syllable: 'mi' });
+  const replace = createChallenge({ word: tomate, operation: 'replace', position: 1, syllable: 'lu' });
+  assert.equal(remove.expectedText, 'tote'); assert.deepEqual(remove.originalPieces.map(p => p.text), ['to', 'ma', 'te']);
+  assert.equal(add.expectedText, 'camisa'); assert.equal(add.extraPiece.text, 'mi');
+  assert.equal(replace.expectedText, 'tolute'); assert.equal(replace.originalPieces[1].text, 'ma');
+  assert.equal(new Set(createChallenge({ word: patata, operation: 'invert' }).originalPieces.map(p => p.id)).size, 3);
 });
 
-test('quitar cubre posiciones inicial, medial y final sin respuesta vacía', () => {
-  assert.deepEqual([0, 1, 2].map((position) => createChallenge({ word: tomate, operation: 'remove', position }).expectedText), ['mate', 'tote', 'toma']);
+test('quitar empieza completa, retira solo una ficha y deshacer la repone en su posición', () => {
+  const { game, round, challenge } = startOne(queso, 'remove', c => c.position === 1);
+  assert.deepEqual(round.currentPieces.map(p => p.text), ['que', 'so']);
+  let state = game.submit({ type: 'remove-piece', pieceId: round.originalPieces[1].id });
+  assert.deepEqual(state.currentPieces.map(p => p.text), ['que']); assert.equal(state.canValidate, true); assert.match(state.announcement, /SO retirada/);
+  assert.equal(game.submit({ type: 'remove-piece', pieceId: round.originalPieces[0].id }).status, 'locked');
+  state = game.submit({ type: 'undo' }); assert.deepEqual(state.currentPieces.map(p => p.text), ['que', 'so']);
+  solve(game, state, challenge); assert.equal(game.submit({ type: 'validate' }).status, 'correct');
 });
 
-test('añadir cubre principio, final y posición intermedia', () => {
-  assert.deepEqual([0, 2, 1].map((position) => createChallenge({ word: casa, operation: 'add', position, syllable: 'mi' }).expectedText), ['micasa', 'casami', 'camisa']);
+test('quitar incorrectamente registra error, no revela solución y reiniciar restaura', () => {
+  const { game, round } = startOne(queso, 'remove', c => c.position === 1);
+  game.submit({ type: 'remove-piece', pieceId: round.originalPieces[0].id });
+  const wrong = game.submit({ type: 'validate' }); assert.equal(wrong.status, 'incorrect'); assert.equal(wrong.expectedText, undefined);
+  assert.equal(game.submit({ type: 'validate' }).status, 'locked'); assert.equal(game.getMetrics().incorrectAttempts, 1);
+  const reset = game.submit({ type: 'reset' }); assert.deepEqual(reset.currentPieces.map(p => p.text), ['que', 'so']); assert.equal(reset.canValidate, false);
 });
 
-test('sustituye una sílaba única y califica la repetida por posición', () => {
-  assert.equal(createChallenge({ word: casa, operation: 'replace', position: 0, syllable: 'me' }).expectedText, 'mesa');
-  assert.match(createChallenge({ word: patata, operation: 'replace', position: 2, syllable: 'lu' }).instruction, /última sílaba TA/);
+test('quitar distingue la posición concreta de sílabas repetidas', () => {
+  const { game, round } = startOne(patata, 'remove', c => c.position === 2);
+  assert.match(round.instruction, /última sílaba TA/);
+  game.submit({ type: 'remove-piece', pieceId: round.originalPieces[1].id }); assert.equal(game.submit({ type: 'validate' }).status, 'incorrect');
+  game.submit({ type: 'undo' }); game.submit({ type: 'remove-piece', pieceId: round.originalPieces[2].id }); assert.equal(game.submit({ type: 'validate' }).status, 'correct');
 });
 
-test('invierte bisílaba, extremos de trisílaba y orden completo', () => {
-  assert.equal(createChallenge({ word: casa, operation: 'invert' }).expectedText, 'saca');
-  assert.equal(createChallenge({ word: tomate, operation: 'invert', variant: 'edges' }).expectedText, 'temato');
-  assert.equal(createChallenge({ word: tomate, operation: 'invert', variant: 'full' }).expectedText, 'temato');
+test('añadir requiere seleccionar la ficha y admite principio, medio y final', () => {
+  for (const position of [0, 1, 2]) {
+    const { game, round } = startOne(casa, 'add', c => c.position === position && c.syllable === 'mi', 2);
+    assert.deepEqual(round.currentPieces.map(p => p.text), ['ca', 'sa']); assert.equal(round.extraPiece.text, 'mi');
+    assert.equal(game.submit({ type: 'insert-at', slotIndex: position }).status, 'locked');
+    let state = game.submit({ type: 'select-extra', pieceId: round.extraPiece.id }); assert.equal(state.selectedPieceId, round.extraPiece.id);
+    state = game.submit({ type: 'insert-at', slotIndex: position }); assert.equal(state.currentPieces[position].id, round.extraPiece.id); assert.equal(state.canValidate, true);
+    assert.equal(game.submit({ type: 'insert-at', slotIndex: 0 }).status, 'locked'); assert.equal(game.submit({ type: 'validate' }).status, 'correct');
+  }
 });
 
-test('excluye inversiones sin cambio', () => {
-  const pool = buildChallengePool({ level: 2, operations: ['invert'], getWords: () => [{ id: 'tatata', word: 'tatata', syllables: ['ta', 'ta', 'ta'] }] });
-  assert.equal(pool.length, 0);
+test('deshacer una adición devuelve la ficha a su zona y reiniciar conserva el original', () => {
+  const { game, round } = startOne(casa, 'add', c => c.position === 1 && c.syllable === 'mi', 2);
+  game.submit({ type: 'select-extra', pieceId: round.extraPiece.id }); game.submit({ type: 'insert-at', slotIndex: 1 });
+  let state = game.submit({ type: 'undo' }); assert.equal(state.extraAvailable, true); assert.deepEqual(state.currentPieces.map(p => p.text), ['ca', 'sa']);
+  state = game.submit({ type: 'reset' }); assert.equal(state.selectedPieceId, null); assert.deepEqual(state.currentPieces.map(p => p.text), ['ca', 'sa']);
 });
 
-test('fichas repetidas tienen identificadores distintos y no se reutilizan', () => {
-  const challenge = createChallenge({ word: patata, operation: 'invert' });
-  assert.equal(new Set(challenge.pieces.map((p) => p.id)).size, 3);
-  const game = createManipulateSyllablesPlugin({ getWords: () => [patata], allWords: source, random: () => 0 });
-  const round = game.start({ level: 2, operations: ['remove'], total: 1 });
-  game.submit({ type: 'tap', pieceId: round.pieces[0].id });
-  assert.equal(game.submit({ type: 'tap', pieceId: round.pieces[0].id }).status, 'locked');
+test('añadir valida la posición exacta', () => {
+  const { game, round } = startOne(casa, 'add', c => c.position === 1 && c.syllable === 'mi', 2);
+  game.submit({ type: 'select-extra', pieceId: round.extraPiece.id }); game.submit({ type: 'insert-at', slotIndex: 0 }); assert.equal(game.submit({ type: 'validate' }).status, 'incorrect');
+  game.submit({ type: 'undo' }); game.submit({ type: 'select-extra', pieceId: round.extraPiece.id }); game.submit({ type: 'insert-at', slotIndex: 1 }); assert.equal(game.submit({ type: 'validate' }).status, 'correct');
 });
 
-test('deshacer y limpiar recuperan fichas', () => {
-  const game = createManipulateSyllablesPlugin({ getWords: source, allWords: source, random: () => 0 }); const round = game.start({ level: 1, operations: ['add'], total: 1 });
-  game.submit({ type: 'tap', pieceId: round.pieces[0].id }); assert.equal(game.submit({ type: 'undo' }).answer.length, 0);
-  game.submit({ type: 'tap', pieceId: round.pieces[0].id }); assert.equal(game.submit({ type: 'clear' }).answer.length, 0);
+test('sustituir muestra la original, seleccionar no altera y reemplaza solo una vez', () => {
+  const { game, round } = startOne(tomate, 'replace', c => c.position === 1 && c.syllable === 'lu');
+  assert.deepEqual(round.currentPieces.map(p => p.text), ['to', 'ma', 'te']); assert.equal(round.extraPiece.text, 'lu');
+  let state = game.submit({ type: 'select-extra', pieceId: round.extraPiece.id }); assert.deepEqual(state.currentPieces.map(p => p.text), ['to', 'ma', 'te']);
+  state = game.submit({ type: 'replace-piece', pieceId: round.originalPieces[1].id }); assert.deepEqual(state.currentPieces.map(p => p.text), ['to', 'lu', 'te']);
+  assert.equal(game.submit({ type: 'replace-piece', pieceId: round.originalPieces[0].id }).status, 'locked');
+  state = game.submit({ type: 'undo' }); assert.deepEqual(state.currentPieces.map(p => p.text), ['to', 'ma', 'te']); assert.equal(state.extraAvailable, true);
 });
 
-test('valida, bloquea doble error y doble puntuación', () => {
-  const game = createManipulateSyllablesPlugin({ getWords: () => [casa], allWords: source, random: () => 0 }); let round = game.start({ level: 1, operations: ['invert'], total: 1 });
-  choose(game, round, ['ca', 'sa']); assert.equal(game.submit({ type: 'validate' }).status, 'incorrect'); assert.equal(game.submit({ type: 'validate' }).status, 'locked'); assert.equal(game.getMetrics().incorrectAttempts, 1);
-  game.submit({ type: 'clear' }); choose(game, round, ['sa', 'ca']); assert.equal(game.submit({ type: 'validate' }).status, 'correct'); assert.equal(game.submit({ type: 'validate' }).status, 'locked'); assert.equal(game.getMetrics().roundsPlayed, 1);
+test('sustituir valida identidad y posición incluso con sílabas repetidas', () => {
+  const { game, round } = startOne(patata, 'replace', c => c.position === 2 && c.syllable === 'lu');
+  game.submit({ type: 'select-extra', pieceId: round.extraPiece.id }); game.submit({ type: 'replace-piece', pieceId: round.originalPieces[1].id }); assert.equal(game.submit({ type: 'validate' }).status, 'incorrect');
+  game.submit({ type: 'undo' }); game.submit({ type: 'select-extra', pieceId: round.extraPiece.id }); game.submit({ type: 'replace-piece', pieceId: round.originalPieces[2].id }); assert.equal(game.submit({ type: 'validate' }).status, 'correct');
 });
 
-test('conserva tildes y ñ', () => {
-  assert.equal(createChallenge({ word: cafe, operation: 'invert' }).expectedText, 'féca'); assert.equal(createChallenge({ word: nino, operation: 'invert' }).expectedText, 'ñoni');
+test('invertir selecciona, cancela e intercambia sin comenzar en una zona vacía', () => {
+  const { game, round } = startOne(casa, 'invert'); assert.deepEqual(round.currentPieces.map(p => p.text), ['ca', 'sa']); assert.equal(round.canValidate, false);
+  let state = game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[0].id }); assert.deepEqual(state.currentPieces.map(p => p.text), ['ca', 'sa']); assert.equal(state.selectedPieceId, round.originalPieces[0].id);
+  state = game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[0].id }); assert.equal(state.selectedPieceId, null);
+  game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[0].id }); state = game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[1].id }); assert.deepEqual(state.currentPieces.map(p => p.text), ['sa', 'ca']); assert.equal(state.canValidate, true);
+  assert.equal(game.submit({ type: 'validate' }).status, 'correct');
 });
 
-test('sesiones equilibradas no repiten identidad y completan 5, 10 y 20', () => {
-  for (const total of [5, 10, 20]) { const game = createManipulateSyllablesPlugin({ random: () => 0 }); let round = game.start({ level: 1, operations: ['remove', 'add', 'replace', 'invert'], total }); assert.equal(round.total, total); for (let i = 0; i < total; i++) { choose(game, round, round.pieces.map(p => p.text)); // derive expected by trying permutations is unnecessary for generation/session coverage
-      game.submit({ type: 'clear' }); const pool = buildChallengePool({ level: 1 }); const challenge = pool.find(c => c.baseWord === round.baseWord && c.operation === round.operation && c.instruction === round.instruction); choose(game, round, challenge.expected); assert.equal(game.submit({ type: 'validate' }).status, 'correct'); if (i < total - 1) round = game.next(); } assert.equal(game.getMetrics().roundsPlayed, total); }
+test('invertir permite varios intercambios, deshacer y reiniciar', () => {
+  const { game, round, challenge } = startOne(tomate, 'invert', c => c.variant === 'full', 3);
+  game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[0].id }); let state = game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[2].id });
+  state = game.submit({ type: 'undo' }); assert.deepEqual(state.currentPieces.map(p => p.text), ['to', 'ma', 'te']);
+  solve(game, state, challenge); state = game.submit({ type: 'reset' }); assert.deepEqual(state.currentPieces.map(p => p.text), ['to', 'ma', 'te']); assert.equal(state.canValidate, false);
+  solve(game, state, challenge); assert.equal(game.submit({ type: 'validate' }).status, 'correct');
 });
 
-test('distribuye operaciones seleccionadas y calcula métricas agrupadas', () => {
+test('invertir completa intercambio de extremos y excluye resultados visualmente idénticos', () => {
+  const { game, round, challenge } = startOne(tomate, 'invert', c => c.variant === 'edges'); solve(game, round, challenge); assert.equal(game.submit({ type: 'validate' }).status, 'correct');
+  const pool = buildChallengePool({ level: 2, operations: ['invert'], getWords: () => [{ id: 'tatata', word: 'tatata', syllables: ['ta', 'ta', 'ta'] }] }); assert.equal(pool.length, 0);
+});
+
+test('acciones incompatibles y movimientos posteriores al acierto quedan bloqueados', () => {
+  const { game, round, challenge } = startOne(casa, 'invert');
+  assert.equal(game.submit({ type: 'remove-piece', pieceId: round.originalPieces[0].id }).status, 'locked'); solve(game, round, challenge); game.submit({ type: 'validate' });
+  assert.equal(game.submit({ type: 'reset' }).status, 'locked'); assert.equal(game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[0].id }).status, 'locked');
+});
+
+test('un estado incorrecto se cuenta una vez y una modificación permite revalidar', () => {
+  const { game, round } = startOne(casa, 'invert');
+  game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[0].id }); game.submit({ type: 'select-swap-piece', pieceId: round.originalPieces[1].id }); game.submit({ type: 'undo' });
+  assert.equal(game.submit({ type: 'validate' }).status, 'locked');
+  // En quitar sí existe un estado completo incorrecto y modificable mediante deshacer.
+  const remove = startOne(queso, 'remove', c => c.position === 1); remove.game.submit({ type: 'remove-piece', pieceId: remove.round.originalPieces[0].id }); remove.game.submit({ type: 'validate' });
+  assert.equal(remove.game.submit({ type: 'validate' }).status, 'locked'); remove.game.submit({ type: 'undo' }); remove.game.submit({ type: 'remove-piece', pieceId: remove.round.originalPieces[1].id }); assert.equal(remove.game.submit({ type: 'validate' }).status, 'correct'); assert.equal(remove.game.getMetrics().incorrectAttempts, 1);
+});
+
+test('una doble validación correcta puntúa una sola vez y conserva métricas', () => {
+  const { game, round, challenge } = startOne(casa, 'invert'); solve(game, round, challenge); assert.equal(game.submit({ type: 'validate' }).status, 'correct'); assert.equal(game.submit({ type: 'validate' }).status, 'locked');
+  assert.deepEqual([game.getMetrics().roundsPlayed, game.getMetrics().firstTryCorrect, game.getMetrics().firstTryPercentage], [1, 1, 100]);
+});
+
+test('no revela solución antes del acierto y conserva tildes y ñ', () => {
+  const cafeRound = startOne(cafe, 'invert'); assert.equal(cafeRound.round.expectedText, undefined); solve(cafeRound.game, cafeRound.round, cafeRound.challenge); assert.equal(cafeRound.game.submit({ type: 'validate' }).expectedText, 'féca');
+  assert.equal(createChallenge({ word: nino, operation: 'invert' }).expectedText, 'ñoni');
+});
+
+test('sesiones deterministas completan 5, 10 y 20 rondas', () => {
+  for (const total of [5, 10, 20]) {
+    const game = createManipulateSyllablesPlugin({ random: () => 0 }); let round = game.start({ level: 1, operations: ['remove', 'add', 'replace', 'invert'], total });
+    assert.equal(round.total, total);
+    for (let index = 0; index < total; index += 1) {
+      const challenge = buildChallengePool({ level: 1 }).find(c => c.baseWord === round.baseWord && c.operation === round.operation && c.instruction === round.instruction);
+      assert.ok(challenge); solve(game, round, challenge); assert.equal(game.submit({ type: 'validate' }).status, 'correct'); if (index < total - 1) round = game.next();
+    }
+    assert.equal(game.getMetrics().roundsPlayed, total);
+  }
+});
+
+test('distribuye operaciones y mantiene métricas agrupadas', () => {
   const game = createManipulateSyllablesPlugin({ random: () => 0 }); let round = game.start({ level: 1, operations: ['remove', 'add'], total: 10 });
-  for (let i=0;i<10;i++){ const challenge=buildChallengePool({level:1,operations:['remove','add']}).find(c=>c.baseWord===round.baseWord&&c.operation===round.operation&&c.instruction===round.instruction); choose(game,round,challenge.expected); game.submit({type:'validate'}); if(i<9) round=game.next(); }
-  const metrics=game.getMetrics(); assert.equal(metrics.firstTryCorrect,10); assert.equal(metrics.firstTryPercentage,100); assert.deepEqual([metrics.byOperation.remove.rounds,metrics.byOperation.add.rounds],[5,5]);
+  for (let i = 0; i < 10; i += 1) { const challenge = buildChallengePool({ level: 1, operations: ['remove', 'add'] }).find(c => c.baseWord === round.baseWord && c.operation === round.operation && c.instruction === round.instruction); solve(game, round, challenge); game.submit({ type: 'validate' }); if (i < 9) round = game.next(); }
+  const metrics = game.getMetrics(); assert.deepEqual([metrics.byOperation.remove.rounds, metrics.byOperation.add.rounds], [5, 5]);
 });
 
 test('devuelve insufficient con cantidad disponible', () => {
