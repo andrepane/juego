@@ -1,5 +1,6 @@
 import { getFilteredWords, normalizeSpanish } from '../core/wordUtils.js';
 import { MANIPULATION_OPERATIONS, SAFE_SYLLABLES, resolveManipulationLevel } from './manipulateSyllablesConfig.js';
+import { migrateLegacyLevelConfig, normalizeSessionConfig } from '../core/sessionConfig.js';
 
 const POSITION_NAMES = ['primera', 'segunda', 'tercera', 'cuarta', 'quinta'];
 const copy = (value) => structuredClone(value);
@@ -19,6 +20,13 @@ function qualifiedSyllable(parts, index) {
 
 function makePieces(parts, identity) {
   return parts.map((text, index) => ({ id: `${identity}-original-${index}`, text, originIndex: index, kind: 'original' }));
+}
+
+export function classifyTargetContext(operation, position, originalLength, variant = 'full') {
+  if (operation === 'invert') return variant;
+  if (position === 0) return 'initial';
+  if (operation === 'add' ? position === originalLength : position === originalLength - 1) return 'final';
+  return 'medial';
 }
 
 export function createChallenge({ word, operation, position = 0, syllable = null, variant = 'full' }) {
@@ -58,19 +66,23 @@ function positionsFor(operation, length, level) {
   return level === 1 ? [0, length - 1] : Array.from({ length }, (_, i) => i);
 }
 
-export function buildChallengePool({ level = 1, operations = Object.keys(MANIPULATION_OPERATIONS), getWords = getFilteredWords } = {}) {
-  const words = getWords(resolveManipulationLevel(level).filters).filter((word) => Array.isArray(word.syllables) && word.syllables.length >= 2);
-  const additions = level === 3 ? [...SAFE_SYLLABLES.simple, ...SAFE_SYLLABLES.complex] : SAFE_SYLLABLES.simple;
+export function buildChallengePool({ level = 1, operations, config, getWords = getFilteredWords } = {}) {
+  const normalized = config ? normalizeSessionConfig(config) : migrateLegacyLevelConfig('manipulate-syllables', level, { operations });
+  const selectedOperations = operations ?? (config ? normalized.activityOptions.operations : Object.keys(MANIPULATION_OPERATIONS));
+  const words = getWords(config ? {} : resolveManipulationLevel(level).filters).filter((word) => Array.isArray(word.syllables) && word.syllables.length >= 2);
+  const additions = config ? (normalized.linguistic.complexities.includes('trabadas') ? [...SAFE_SYLLABLES.simple, ...SAFE_SYLLABLES.complex] : SAFE_SYLLABLES.simple) : level === 3 ? [...SAFE_SYLLABLES.simple, ...SAFE_SYLLABLES.complex] : SAFE_SYLLABLES.simple;
   const pool = [];
-  for (const word of words) for (const operation of operations) {
+  for (const word of words) for (const operation of selectedOperations) {
     if (operation === 'invert') {
-      const variants = level === 2 ? ['edges'] : level === 3 ? ['full', 'edges'] : ['full'];
+      const variants = config ? (word.syllables.length > 2 ? ['full', 'edges'] : ['full']) : level === 2 ? ['edges'] : level === 3 ? ['full', 'edges'] : ['full'];
       for (const variant of variants) {
+        if (config && variant === 'edges' && !['initial', 'final'].every(position => normalized.linguistic.targetPositions.includes(position))) continue;
         const challenge = createChallenge({ word, operation, variant });
         const changedIdentity = challenge.expectedPieces.some((piece, index) => piece.id !== challenge.originalPieces[index]?.id);
         if (changedIdentity && !sameText(challenge.expectedText, word.word)) pool.push(challenge);
       }
-    } else for (const position of positionsFor(operation, word.syllables.length, level)) {
+    } else for (const position of positionsFor(operation, word.syllables.length, config ? 3 : level)) {
+      if (config && !normalized.linguistic.targetPositions.includes(classifyTargetContext(operation, position, word.syllables.length))) continue;
       if (operation === 'remove') pool.push(createChallenge({ word, operation, position }));
       else for (const syllable of additions) {
         if (operation === 'replace' && sameText(word.syllables[position], syllable)) continue;
@@ -129,7 +141,7 @@ const helperInstructions = {
 export function createManipulateSyllablesPlugin({ random = Math.random, getWords = getFilteredWords } = {}) {
   const state = { challenges: [], index: 0, currentPieces: [], history: [], selectedPieceId: null, completed: false,
     firstTry: true, incorrectAttempts: 0, results: [], lastValidatedFingerprint: null, announcement: '', validationState: 'unvalidated',
-    roundMetrics: { movements: 0, undoUses: 0, resetUses: 0 } };
+    roundMetrics: { movements: 0, undoUses: 0, resetUses: 0 }, plannedRounds: 0, therapistRestarts: 0, endedEarly: false };
   const current = () => state.challenges[state.index];
   const fingerprint = () => state.currentPieces.map(({ id }) => id).join('|');
   const originalFingerprint = () => current().originalPieces.map(({ id }) => id).join('|');
@@ -149,7 +161,7 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
       extraAvailable: Boolean(round.extraPiece && !extraIsPlaced()), selectedPieceId: state.selectedPieceId, historyLength: state.history.length, isModified: fingerprint() !== originalFingerprint(),
       canValidate: canValidate(), validationState: state.validationState, firstTry: state.firstTry,
       incorrectAttempts: state.incorrectAttempts, roundCompleted: state.completed, announcement: state.announcement,
-      roundMetrics: copy(state.roundMetrics), targetContext: round.operation === 'invert' ? round.variant : round.position === 0 ? 'initial' : round.position === round.original.length || round.position === round.original.length - 1 ? 'final' : 'medial',
+      roundMetrics: copy(state.roundMetrics), targetContext: classifyTargetContext(round.operation, round.position, round.original.length, round.variant),
       expectedLength: round.expectedPieces.length, expectedText: status === 'correct' ? round.expectedText : undefined,
     } : { status: 'empty' };
   }
@@ -165,13 +177,17 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
     state.lastValidatedFingerprint = null; state.validationState = 'unvalidated'; state.announcement = announcement;
     return snapshot('progress');
   }
-  function start({ level = 1, operations = Object.keys(MANIPULATION_OPERATIONS), total = 5 } = {}) {
+  function start(options = {}) {
+    const legacy = !options.activityId && options.level != null;
+    const config = normalizeSessionConfig(options.activityId ? options : { activityId: 'manipulate-syllables', ...options });
+    const operations = config.activityOptions.operations;
+    const total = config.rounds;
     const selectedOperations = [...new Set(operations)].filter((item) => MANIPULATION_OPERATIONS[item]);
-    const pool = buildChallengePool({ level, operations: selectedOperations, getWords });
+    const pool = legacy ? buildChallengePool({ level: options.level, operations: selectedOperations, getWords }) : buildChallengePool({ config, operations: selectedOperations, getWords });
     const schedule = createBalancedOperationSchedule(selectedOperations, total, random);
     const selection = selectVariedChallenges(pool, schedule, random);
-    if (!selectedOperations.length || selection.status === 'insufficient') return { status: 'insufficient', available: selection.challenges?.length ?? 0, requested: total };
-    Object.assign(state, { challenges: selection.challenges, index: 0, completed: false, firstTry: true, incorrectAttempts: 0, results: [] });
+    if (!selectedOperations.length || selection.status === 'insufficient') return { status: 'insufficient', available: pool.length, requested: total };
+    Object.assign(state, { challenges: selection.challenges, index: 0, completed: false, firstTry: true, incorrectAttempts: 0, results: [], plannedRounds: total, therapistRestarts: 0, endedEarly: false });
     state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 };
     restoreRound(); return snapshot();
   }
@@ -237,8 +253,17 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
     if (state.index >= state.challenges.length - 1) return { status: 'complete' };
     state.index += 1; state.completed = false; state.firstTry = true; state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 }; restoreRound(); return snapshot();
   }
+  function restartRound() { if (!current() || state.completed) return snapshot('locked'); state.therapistRestarts += 1; restoreRound(); return snapshot('ready'); }
+  function skipRound() {
+    const round = current(); if (!round || state.completed) return snapshot('locked');
+    state.results.push({ operation: round.operation, baseWord: round.baseWord, instruction: round.instruction, status: 'skipped', firstTry: false, incorrectAttempts: 0, targetContext: classifyTargetContext(round.operation, round.position, round.original.length, round.variant), ...copy(state.roundMetrics) });
+    state.completed = true; return snapshot('skipped');
+  }
+  function finishSession() { state.endedEarly = true; return getSessionState(); }
+  function getSessionState() { return getMetrics(); }
   function getMetrics() {
-    const firstTryCorrect = state.results.filter((result) => result.firstTry).length;
+    const completed = state.results.filter(result => result.status !== 'skipped');
+    const firstTryCorrect = completed.filter((result) => result.firstTry).length;
     const byOperation = Object.fromEntries(Object.keys(MANIPULATION_OPERATIONS).map((operation) => {
       const results = state.results.filter((result) => result.operation === operation);
       const first = results.filter((result) => result.firstTry).length;
@@ -246,11 +271,12 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
         firstTryPercentage: results.length ? Math.round(first / results.length * 100) : 0, movements: results.reduce((sum, item) => sum + item.movements, 0),
         undoUses: results.reduce((sum, item) => sum + item.undoUses, 0), resetUses: results.reduce((sum, item) => sum + item.resetUses, 0) }];
     }));
-    return { roundsPlayed: state.results.length, firstTryCorrect, incorrectAttempts: state.incorrectAttempts,
-      firstTryPercentage: state.results.length ? Math.round(firstTryCorrect / state.results.length * 100) : 0,
+    const skippedRounds = state.results.length - completed.length;
+    return { roundsPlayed: completed.length, plannedRounds: state.plannedRounds, completedRounds: completed.length, correctRounds: completed.length, skippedRounds, therapistRestarts: state.therapistRestarts, endedEarly: state.endedEarly, firstTryCorrect, incorrectAttempts: state.incorrectAttempts,
+      firstTryPercentage: completed.length ? Math.round(firstTryCorrect / completed.length * 100) : 0,
       totalMovements: state.results.reduce((sum, item) => sum + item.movements, 0), totalUndoUses: state.results.reduce((sum, item) => sum + item.undoUses, 0),
       totalResetUses: state.results.reduce((sum, item) => sum + item.resetUses, 0),
       byOperation, results: copy(state.results) };
   }
-  return { id: 'manipulate-syllables', start, submit, next, getMetrics };
+  return { id: 'manipulate-syllables', start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState };
 }

@@ -14,7 +14,7 @@ const source = () => words;
 function startOne(word, operation, predicate = () => true, level = word.syllables.length === 3 ? 2 : 1) {
   const pool = buildChallengePool({ level, operations: [operation], getWords: () => [word] });
   const index = pool.findIndex(predicate); assert.notEqual(index, -1);
-  const game = createManipulateSyllablesPlugin({ getWords: () => [word], allWords: source, random: () => (index + 0.01) / pool.length });
+  const game = createManipulateSyllablesPlugin({ getWords: () => [word], random: () => (index + 0.01) / pool.length });
   const round = game.start({ level, operations: [operation], total: 1 });
   const challenge = pool.find((item) => item.baseWord === round.baseWord && item.operation === round.operation && item.instruction === round.instruction);
   return { game, round, challenge };
@@ -181,7 +181,7 @@ test('distribuye operaciones y mantiene métricas agrupadas', () => {
 });
 
 test('devuelve insufficient con cantidad disponible', () => {
-  const game = createManipulateSyllablesPlugin({ getWords: () => [], allWords: source }); assert.deepEqual(game.start({ level: 1, operations: ['remove'], total: 10 }), { status: 'insufficient', available: 0, requested: 10 });
+  const game = createManipulateSyllablesPlugin({ getWords: () => [] }); assert.deepEqual(game.start({ level: 1, operations: ['remove'], total: 10 }), { status: 'insufficient', available: 0, requested: 10 });
 });
 
 test('planifica operaciones equilibradas, aleatorias y sin consecutivas evitables', () => {

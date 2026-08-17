@@ -18,6 +18,11 @@ export function createExerciseRegistry() {
         }
       });
 
+      const optionalMethods = ['restartRound', 'skipRound', 'finishSession', 'getSessionState'];
+      optionalMethods.forEach((methodName) => {
+        if (methodName in plugin && typeof plugin[methodName] !== 'function') throw new Error(`Plugin "${plugin.id}" has an invalid optional method: ${methodName}`);
+      });
+
       plugins.set(plugin.id, plugin);
       return plugin;
     },

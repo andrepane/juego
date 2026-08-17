@@ -1,6 +1,7 @@
-import { getFilteredWords, normalizeSpanish, shuffleArray } from '../core/wordUtils.js';
+import { getFilteredWords, normalizeSpanish, shuffleArray, wordMatchesLinguistic } from '../core/wordUtils.js';
 import { createRecentHistory } from '../core/recentHistory.js';
 import { resolveOrderLevel } from './orderSyllablesConfig.js';
+import { migrateLegacyLevelConfig, normalizeSessionConfig } from '../core/sessionConfig.js';
 
 export function ensureReorderedSyllables(syllables, random = Math.random) {
   if (!Array.isArray(syllables)) return [];
@@ -46,8 +47,8 @@ export function isCorrectSyllableAnswer(answer, syllables) {
 
 export function createOrderSyllablesPlugin({ random = Math.random, getWords = getFilteredWords } = {}) {
   const history = createRecentHistory(Number.MAX_SAFE_INTEGER);
-  const state = { level: 1, round: null, answer: [], score: 0, incorrectAttempts: 0,
-    completed: false, checked: false, firstTry: true, results: [] };
+  const state = { level: 1, config: null, round: null, answer: [], score: 0, incorrectAttempts: 0,
+    completed: false, checked: false, firstTry: true, results: [], plannedRounds: 0, therapistRestarts: 0, endedEarly: false };
 
   function snapshot(status = 'ready') {
     return { status, level: state.level, pieces: state.round?.pieces ?? [], answer: [...state.answer],
@@ -56,7 +57,7 @@ export function createOrderSyllablesPlugin({ random = Math.random, getWords = ge
   }
 
   function makeRound() {
-    const candidates = getWords(resolveOrderLevel(state.level).linguisticFilters).filter(isOrderableWord);
+    const candidates = (state.config ? getWords({}).filter(word => wordMatchesLinguistic(word, state.config.linguistic)) : getWords(resolveOrderLevel(state.level).linguisticFilters)).filter(isOrderableWord);
     const fresh = candidates.filter((word) => !history.has(word.id));
     const word = getRandomWordWith(fresh.length ? fresh : candidates, random);
     if (!word) return null;
@@ -66,9 +67,12 @@ export function createOrderSyllablesPlugin({ random = Math.random, getWords = ge
       pieces: shuffled.map((text, index) => ({ id: `piece-${index}`, text })) };
   }
 
-  function start({ level = state.level, resetScore = false } = {}) {
-    state.level = Number(level);
-    if (resetScore) { state.score = 0; state.incorrectAttempts = 0; state.results = []; history.clear(); }
+  function start(options = {}) {
+    const legacy = !options.activityId && options.level != null;
+    const config = normalizeSessionConfig(legacy ? migrateLegacyLevelConfig('order-syllables', options.level, options) : { activityId: 'order-syllables', ...options });
+    state.config = legacy ? null : config; state.level = Number(options.level ?? state.level); state.plannedRounds = config.rounds;
+    const resetScore = options.resetScore ?? true;
+    if (resetScore) { state.score = 0; state.incorrectAttempts = 0; state.results = []; state.therapistRestarts = 0; state.endedEarly = false; history.clear(); }
     state.answer = []; state.completed = false; state.checked = false; state.firstTry = true;
     state.round = makeRound();
     return state.round ? snapshot() : { status: 'empty' };
@@ -96,15 +100,19 @@ export function createOrderSyllablesPlugin({ random = Math.random, getWords = ge
     return snapshot('correct');
   }
 
-  function next() { return state.completed ? start({ level: state.level }) : snapshot('locked'); }
+  function next() { if (!state.completed) return snapshot('locked'); state.answer = []; state.completed = false; state.checked = false; state.firstTry = true; state.round = makeRound(); return state.round ? snapshot() : { status: 'empty' }; }
+  function restartRound() { if (!state.round || state.completed) return snapshot('locked'); state.therapistRestarts += 1; state.answer = []; state.checked = false; state.firstTry = true; return snapshot(); }
+  function skipRound() { if (!state.round || state.completed) return snapshot('locked'); state.results.push({ word: state.round.word.text, status: 'skipped', firstTry: false }); state.completed = true; return snapshot('skipped'); }
+  function finishSession() { state.endedEarly = true; return getMetrics(); }
   function getMetrics() {
-    const firstTryCorrect = state.results.filter((item) => item.firstTry).length;
-    return { score: state.score, roundsPlayed: state.results.length, firstTryCorrect,
+    const completed = state.results.filter(item => item.status !== 'skipped'); const skippedRounds = state.results.length - completed.length;
+    const firstTryCorrect = completed.filter((item) => item.firstTry).length;
+    return { score: state.score, roundsPlayed: completed.length, plannedRounds: state.plannedRounds, completedRounds: completed.length, correctRounds: completed.length, skippedRounds, therapistRestarts: state.therapistRestarts, endedEarly: state.endedEarly, firstTryCorrect,
       incorrectAttempts: state.incorrectAttempts,
-      firstTryPercentage: state.results.length ? Math.round(firstTryCorrect / state.results.length * 100) : 0,
+      firstTryPercentage: completed.length ? Math.round(firstTryCorrect / completed.length * 100) : 0,
       results: state.results.map((item) => ({ ...item })), recentWordIds: history.snapshot() };
   }
-  return { id: 'order-syllables', start, submit, next, getMetrics };
+  return { id: 'order-syllables', start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState: getMetrics };
 }
 
 function getRandomWordWith(words, random) {

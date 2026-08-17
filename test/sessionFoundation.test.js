@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { applyPreset, configurationMatchesPreset, createDefaultSessionConfig, detectPreset, getModePolicy, migrateLegacyLevelConfig, normalizeSessionConfig, validateSessionConfig } from '../src/core/sessionConfig.js';
+import { calculateAvailability, compatibleWords } from '../src/core/sessionAvailability.js';
+import { classifyTargetContext, buildChallengePool, createManipulateSyllablesPlugin } from '../src/exercises/manipulateSyllablesPlugin.js';
+import { createOrderSyllablesPlugin } from '../src/exercises/orderSyllablesPlugin.js';
+
+const words = [
+  { id:'casa', word:'casa', syllables:['ca','sa'], syllableCount:2, structure:'CV-CV', frequency:1 },
+  { id:'tomate', word:'tomate', syllables:['to','ma','te'], syllableCount:3, structure:'CV-CV-CV', frequency:2 },
+  { id:'cristal', word:'cristal', syllables:['cris','tal'], syllableCount:2, structure:'CCVC-CVC', frequency:3 },
+  { id:'mariposa', word:'mariposa', syllables:['ma','ri','po','sa'], syllableCount:4, structure:'CV-CV-CV-CV', frequency:1 }
+];
+
+test('crea configuraciones predeterminadas serializables para ambas actividades', () => {
+  for (const id of ['order-syllables','manipulate-syllables']) { const config=createDefaultSessionConfig(id); assert.equal(config.mode,'supervised'); assert.deepEqual(JSON.parse(JSON.stringify(config)),config); assert.equal(validateSessionConfig(config).valid,true); }
+});
+test('normaliza tipos, orden y duplicados', () => { const c=normalizeSessionConfig({ ...applyPreset('order-syllables','initial'), rounds:'10', linguistic:{syllableCounts:['3','2','2'],complexities:['mixed','simple'],frequencies:['2','1']} }); assert.deepEqual(c.linguistic.syllableCounts,[2,3]); assert.equal(c.rounds,10); });
+test('rechaza actividad, modo, duración y dimensiones inválidas', () => { const c=normalizeSessionConfig({activityId:'bad',mode:'bad',rounds:0,linguistic:{syllableCounts:[],complexities:[],frequencies:[]}}); assert.equal(validateSessionConfig(c).valid,false); });
+test('aplica, restaura y compara perfiles sin mutarlos', () => { const a=applyPreset('order-syllables','initial'); a.rounds=20; assert.equal(applyPreset('order-syllables','initial').rounds,5); assert.equal(configurationMatchesPreset(applyPreset('order-syllables','advanced'),'advanced'),true); });
+test('detecta personalizado tras una modificación manual', () => { const c=applyPreset('order-syllables','initial'); c.rounds=10; assert.equal(detectPreset(c),'custom'); });
+test('migra los tres niveles antiguos a perfiles dimensionales', () => { assert.equal(migrateLegacyLevelConfig('order-syllables',1).presetId,'initial'); assert.equal(migrateLegacyLevelConfig('order-syllables',2).presetId,'intermediate'); assert.equal(migrateLegacyLevelConfig('manipulate-syllables',3).presetId,'advanced'); });
+test('las políticas centralizan terapeuta, supervisado y autónomo', () => { assert.equal(getModePolicy('therapist').showProfessionalControls,true); assert.equal(getModePolicy('supervised').showProfessionalControls,false); assert.equal(getModePolicy('autonomous').alwaysShowHelp,true); });
+test('filtra longitud, complejidad, frecuencia y su combinación', () => { let c=applyPreset('order-syllables','initial'); assert.deepEqual(compatibleWords(c,words).map(w=>w.id),['casa']); c=applyPreset('order-syllables','advanced'); assert.deepEqual(compatibleWords(c,words),[]); });
+test('clasifica add inicial, medial y final sin confundir espacios intermedios', () => { assert.deepEqual([0,1,2,3].map(p=>classifyTargetContext('add',p,3)),['initial','medial','medial','final']); });
+test('clasifica remove y replace según índices de sílaba', () => { assert.equal(classifyTargetContext('remove',2,3),'final'); assert.equal(classifyTargetContext('replace',1,3),'medial'); });
+test('el pool respeta posiciones inicial, medial y final', () => { const base=applyPreset('manipulate-syllables','intermediate'); base.activityOptions.operations=['remove']; for (const position of ['initial','medial','final']) { base.linguistic.targetPositions=[position]; const pool=buildChallengePool({config:base,getWords:()=>[words[1]]}); assert.ok(pool.length); assert.ok(pool.every(c=>classifyTargetContext(c.operation,c.position,c.original.length)===position)); } });
+test('inversión full no se fuerza a posición y edges exige ambos extremos', () => { const c=applyPreset('manipulate-syllables','advanced'); c.activityOptions.operations=['invert']; c.linguistic.targetPositions=['medial']; let pool=buildChallengePool({config:c,getWords:()=>[words[1]]}); assert.deepEqual([...new Set(pool.map(x=>x.variant))],['full']); c.linguistic.targetPositions=['initial','final']; pool=buildChallengePool({config:c,getWords:()=>[words[1]]}); assert.deepEqual(new Set(pool.map(x=>x.variant)),new Set(['full','edges'])); });
+test('detecta incompatibilidad de posiciones y operaciones con disponibilidad exacta', () => { const c=applyPreset('manipulate-syllables','initial'); c.activityOptions.operations=['remove']; c.linguistic.targetPositions=['medial']; const a=calculateAvailability(c,[words[0]]); assert.deepEqual([a.compatibleWordCount,a.challengeCount,a.sufficient],[0,0,false]); assert.match(a.reason,/ningún reto/); assert.ok(a.suggestions.includes('Elige más posiciones.')); });
+test('recalcula disponibilidad al ampliar dimensiones', () => { const c=applyPreset('order-syllables','initial'); const before=calculateAvailability(c,words); c.linguistic.syllableCounts.push(3); c.linguistic.frequencies.push(2); const after=calculateAvailability(c,words); assert.ok(after.challengeCount>before.challengeCount); });
+test('reiniciar, omitir y finalizar conservan métricas comunes en Ordenar', () => { const game=createOrderSyllablesPlugin({getWords:()=>[words[0]],random:()=>0}); game.start({...applyPreset('order-syllables','initial'),rounds:3}); game.restartRound(); game.skipRound(); game.next(); game.finishSession(); const m=game.getMetrics(); assert.deepEqual([m.skippedRounds,m.therapistRestarts,m.endedEarly,m.completedRounds],[1,1,true,0]); });
+test('reiniciar, omitir y finalizar conservan métricas comunes en Manipular', () => { const c=applyPreset('manipulate-syllables','initial'); c.rounds=1; const game=createManipulateSyllablesPlugin({getWords:()=>[words[0]],random:()=>0}); game.start(c); game.restartRound(); game.skipRound(); game.finishSession(); const m=game.getMetrics(); assert.deepEqual([m.skippedRounds,m.therapistRestarts,m.endedEarly,m.incorrectAttempts],[1,1,true,0]); assert.equal(m.results[0].status,'skipped'); });

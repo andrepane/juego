@@ -58,3 +58,17 @@ npm test
 ## Limitaciones actuales
 
 El corpus local es acotado y no equivale a un diccionario clínicamente validado. Un futuro rediseño de dificultad deberá separar longitud, estructura, posición y operación; esta versión mantiene las reglas actuales. No se incluyen fonemas, letras, imágenes, audio, perfiles, informes, backend, IA ni persistencia. Las herramientas experimentales de administración e importación se conservan fuera de la experiencia de estas actividades; no intervienen en la generación de consignas.
+
+## Configuración y contrato común de sesión
+
+Ambas actividades consumen el modelo serializable de `src/core/sessionConfig.js`. Separa modo, duración, dimensiones lingüísticas y opciones exclusivas de cada actividad. Los perfiles Inicial, Intermedio y Avanzado son puntos de partida editables; cualquier cambio que deje de coincidir se identifica como Personalizado. El valor `4` en `syllableCounts` significa **cuatro o más sílabas** y solo selecciona entradas que ya existen en el corpus.
+
+Los antiguos niveles 1, 2 y 3 se adaptan, respectivamente, a Inicial, Intermedio y Avanzado mediante `migrateLegacyLevelConfig`; no existe un segundo motor dimensional. La frecuencia del corpus se presenta como 1 Muy frecuente, 2 Frecuente y 3 Menos frecuente.
+
+Los modos `therapist`, `supervised` (predeterminado) y `autonomous` se describen mediante políticas comunes. Los plugins mantienen `start`, `submit`, `next` y `getMetrics`, y pueden ofrecer `restartRound`, `skipRound`, `finishSession` y `getSessionState`. El registro valida esos métodos opcionales cuando están presentes. Las métricas comunes distinguen rondas completadas, omitidas y no realizadas, además de reinicios profesionales y finalización anticipada.
+
+La disponibilidad se calcula sobre palabras jugables y retos concretos antes de comenzar. En Manipular, las posiciones filtran el banco de retos: `edges` requiere ambos extremos y `full` sigue siendo una inversión completa independiente de inicial/medial/final.
+
+### Limitación léxica deliberada
+
+No se filtra ni se informa “palabra real” frente a “pseudopalabra”: el corpus no permite determinar ese estado con fiabilidad. Esta base tampoco incorpora audio, imágenes, adaptación automática, datos personales ni persistencia.
