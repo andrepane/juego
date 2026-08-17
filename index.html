@@ -1,36 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LEXIA · Manipulación metalingüística</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4f7fb"><title>LEXIA · Actividades fonológicas</title><link rel="stylesheet" href="style.css"></head>
 <body>
-  <main class="app" aria-label="Actividad metalingüística">
-    <p class="eyebrow">LEXIA</p>
-    <h1 id="word-display" class="word">TOMATE</h1>
-
-    <section class="tiles-zone" aria-label="Representación estructural">
-      <div id="tiles" class="tiles"></div>
-    </section>
-
-    <p id="instruction" class="instruction">Quita la sílaba del medio.</p>
-
-    <form id="answer-form" class="answer-form" autocomplete="off">
-      <input id="answer-input" type="text" placeholder="Escribe la palabra resultante" maxlength="24" required />
-      <button type="submit">Comprobar</button>
-    </form>
-
-    <p id="feedback" class="feedback idle">Piensa la palabra y escríbela.</p>
-
-    <div class="controls" role="group" aria-label="Controles">
-      <button id="mode-btn" type="button">Modo: Sílabas</button>
-      <button id="next-btn" type="button">Nueva consigna</button>
-      <button id="word-btn" type="button">Nueva palabra</button>
+<main id="app" class="shell">
+  <section id="home" class="screen active" aria-labelledby="home-title">
+    <header class="hero"><p class="brand">LEXIA</p><h1 id="home-title">Entrenamiento lingüístico, paso a paso</h1><p>Actividades para trabajar habilidades fonológicas y metalingüísticas.</p></header>
+    <div class="cards">
+      <button id="open-config" class="activity-card active-card" type="button"><span class="card-icon" aria-hidden="true">A · MI · GO</span><strong>Ordenar sílabas</strong><span>Organiza las sílabas para formar una palabra.</span><b>Disponible</b></button>
+      <article class="activity-card coming" aria-disabled="true"><span class="card-icon muted" aria-hidden="true">□ □ □</span><strong>Manipulación metalingüística</strong><span>Quitar, cambiar y reorganizar partes de palabras.</span><b>Próximamente</b></article>
     </div>
-  </main>
+  </section>
 
-  <script type="module" src="main.js"></script>
-</body>
-</html>
+  <section id="config" class="screen" aria-labelledby="config-title"><button class="back-link" data-home type="button">← Volver al inicio</button><p class="brand">LEXIA</p><h1 id="config-title">Configura Ordenar sílabas</h1><form id="config-form">
+    <fieldset><legend>Elige un nivel</legend><div class="option-grid">
+      <label class="option"><input type="radio" name="level" value="1" checked><span><strong>Nivel 1</strong><small>Palabras de dos sílabas con estructura sencilla, como casa.</small></span></label>
+      <label class="option"><input type="radio" name="level" value="2"><span><strong>Nivel 2</strong><small>Palabras de tres sílabas con estructura sencilla, como tomate.</small></span></label>
+      <label class="option"><input type="radio" name="level" value="3"><span><strong>Nivel 3</strong><small>Palabras con estructuras mixtas o sílabas trabadas, como cristal.</small></span></label>
+    </div></fieldset>
+    <fieldset><legend>Número de rondas</legend><div class="round-options"><label><input type="radio" name="rounds" value="5" checked><span>5</span></label><label><input type="radio" name="rounds" value="10"><span>10</span></label><label><input type="radio" name="rounds" value="15"><span>15</span></label><label><input type="radio" name="rounds" value="20"><span>20</span></label></div></fieldset>
+    <button class="primary wide" type="submit">Comenzar</button>
+  </form></section>
+
+  <section id="game" class="screen game" aria-labelledby="game-title"><header class="game-header"><div><p id="round-label">Ronda 1 de 5</p><p id="score-label">Aciertos: 0</p></div><button id="exit" class="secondary" type="button">Salir de la actividad</button></header><div class="progress" role="progressbar" aria-label="Progreso de la sesión" aria-valuemin="0" aria-valuemax="100"><span id="progress-bar"></span></div>
+    <div class="play-card"><p class="brand">ORDENAR SÍLABAS</p><h1 id="game-title">Forma la palabra</h1><p>Selecciona las sílabas en el orden correcto.</p><div id="pieces" class="pieces" aria-label="Sílabas disponibles"></div><p class="zone-label">Tu respuesta</p><div id="answer" class="answer" aria-label="Respuesta construida"></div><div class="edit-controls"><button id="undo" class="secondary" type="button">↶ Deshacer</button><button id="clear" class="secondary" type="button">Limpiar</button></div><p id="feedback" class="feedback" aria-live="polite">Elige una sílaba para empezar.</p><p id="revealed-word" class="revealed" aria-live="polite"></p><button id="check" class="primary wide" type="button" disabled>Comprobar respuesta</button><button id="next" class="primary wide hidden" type="button">Siguiente ronda</button></div>
+  </section>
+
+  <section id="summary" class="screen" aria-labelledby="summary-title"><p class="brand">SESIÓN COMPLETADA</p><h1 id="summary-title">Resumen final</h1><div id="metrics" class="metrics"></div><h2>Palabras trabajadas</h2><ul id="word-results" class="results"></ul><div class="summary-actions"><button id="repeat" class="primary" type="button">Repetir configuración</button><button class="secondary" data-home type="button">Volver al inicio</button></div></section>
+</main>
+<dialog id="exit-dialog" aria-labelledby="dialog-title"><h2 id="dialog-title">¿Salir de la actividad?</h2><p>El progreso de esta sesión no se guardará.</p><div><button id="cancel-exit" class="primary" type="button">Continuar jugando</button><button id="confirm-exit" class="secondary" type="button">Salir sin guardar</button></div></dialog>
+<script type="module" src="main.js"></script></body></html>

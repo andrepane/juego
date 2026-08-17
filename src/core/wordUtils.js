@@ -23,8 +23,23 @@ export function getRandomWord(words = WORDS) {
   return words[Math.floor(Math.random() * words.length)];
 }
 
+export function normalizeSpanish(value) {
+  return String(value ?? '')
+    .trim()
+    .toLocaleLowerCase('es')
+    .normalize('NFC')
+    .replace(/[^a-záéíóúüñ]/gu, '');
+}
+
+export function getWordComplexity(word) {
+  const parts = String(word?.structure ?? '').split('-').filter(Boolean);
+  if (parts.some((part) => part.startsWith('CC'))) return 'trabadas';
+  if (parts.some((part) => part !== 'CV')) return 'mixed';
+  return 'simple';
+}
+
 export function getFilteredWords(filters = {}) {
-  const { difficulty, category, syllableCount, frequency, structure } = filters;
+  const { difficulty, category, syllableCount, frequency, structure, complexity } = filters;
 
   return WORDS.filter((word) => {
     if (difficulty !== undefined && word.difficulty !== difficulty) {
@@ -57,6 +72,12 @@ export function getFilteredWords(filters = {}) {
       } else if (word.structure !== structure) {
         return false;
       }
+    }
+
+
+    if (complexity !== undefined) {
+      const allowed = Array.isArray(complexity) ? complexity : [complexity];
+      if (!allowed.includes(getWordComplexity(word))) return false;
     }
 
     return true;

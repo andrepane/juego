@@ -2,7 +2,7 @@ export const ORDER_LEVELS = {
   1: {
     id: 1,
     label: 'Nivel 1',
-    description: '2 sílabas, frecuencia 1-2, estructuras simples (CV-CV).',
+    description: 'Palabras de dos sílabas con una estructura sencilla, como casa.',
     linguisticFilters: {
       syllableCount: 2,
       frequency: [1, 2],
@@ -12,19 +12,17 @@ export const ORDER_LEVELS = {
   2: {
     id: 2,
     label: 'Nivel 2',
-    description: '3 sílabas, frecuencia 1-2, estructuras simples (CV-CV-CV).',
+    description: 'Palabras de tres sílabas con una estructura sencilla, como tomate.',
     linguisticFilters: {
       syllableCount: 3,
-      frequency: [1, 2],
-      structure: ['CV-CV-CV']
+      structure: ['CV-CV-CV', 'V-CV-CV']
     }
   },
   3: {
     id: 3,
     label: 'Nivel 3',
-    description: 'Estructuras mixtas/trabadas, frecuencia 3, palabras más complejas.',
+    description: 'Palabras con sílabas mixtas o trabadas, como cristal.',
     linguisticFilters: {
-      frequency: 3,
       complexity: ['mixed', 'trabadas']
     }
   }
