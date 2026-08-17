@@ -3,13 +3,30 @@ import { createRecentHistory } from '../core/recentHistory.js';
 import { resolveOrderLevel } from './orderSyllablesConfig.js';
 
 export function ensureReorderedSyllables(syllables, random = Math.random) {
-  if (!Array.isArray(syllables) || syllables.length < 2) return [...(syllables ?? [])];
+  if (!Array.isArray(syllables)) return [];
+  if (syllables.length < 2) return [...syllables];
+  if (new Set(syllables).size < 2) return null;
   const original = syllables.join('\u0000');
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const candidate = shuffleArrayWith(syllables, random);
     if (candidate.join('\u0000') !== original) return candidate;
   }
-  return [...syllables.slice(1), syllables[0]];
+  const reordered = [...syllables];
+  const differentIndex = reordered.findIndex((value) => value !== reordered[0]);
+  [reordered[0], reordered[differentIndex]] = [reordered[differentIndex], reordered[0]];
+  return reordered;
+}
+
+export function isOrderableWord(word) {
+  const syllables = Array.isArray(word) ? word : word?.syllables;
+  return Array.isArray(syllables) && syllables.length >= 2 && new Set(syllables).size >= 2;
+}
+
+export function calculateRoundProgress(currentRound, totalRounds) {
+  const current = Number(currentRound);
+  const total = Number(totalRounds);
+  if (!Number.isFinite(current) || !Number.isFinite(total) || total <= 0) return 0;
+  return Math.round(Math.min(Math.max(current, 0), total) / total * 100);
 }
 
 function shuffleArrayWith(values, random) {
@@ -27,7 +44,7 @@ export function isCorrectSyllableAnswer(answer, syllables) {
     && answer.every((piece, index) => normalizeSpanish(piece.text ?? piece) === normalizeSpanish(syllables[index]));
 }
 
-export function createOrderSyllablesPlugin({ random = Math.random } = {}) {
+export function createOrderSyllablesPlugin({ random = Math.random, getWords = getFilteredWords } = {}) {
   const history = createRecentHistory(Number.MAX_SAFE_INTEGER);
   const state = { level: 1, round: null, answer: [], score: 0, incorrectAttempts: 0,
     completed: false, checked: false, firstTry: true, results: [] };
@@ -39,11 +56,12 @@ export function createOrderSyllablesPlugin({ random = Math.random } = {}) {
   }
 
   function makeRound() {
-    const candidates = getFilteredWords(resolveOrderLevel(state.level).linguisticFilters);
+    const candidates = getWords(resolveOrderLevel(state.level).linguisticFilters).filter(isOrderableWord);
     const fresh = candidates.filter((word) => !history.has(word.id));
     const word = getRandomWordWith(fresh.length ? fresh : candidates, random);
     if (!word) return null;
     const shuffled = ensureReorderedSyllables(word.syllables, random);
+    if (!shuffled) return null;
     return { word: { id: word.id, text: word.word, syllables: [...word.syllables] },
       pieces: shuffled.map((text, index) => ({ id: `piece-${index}`, text })) };
   }
@@ -67,7 +85,8 @@ export function createOrderSyllablesPlugin({ random = Math.random } = {}) {
     }
     if (type === 'undo') { if (!state.completed) state.answer.pop(); state.checked = false; return snapshot('progress'); }
     if (type === 'clear') { if (!state.completed) state.answer = []; state.checked = false; return snapshot('progress'); }
-    if (type !== 'validate' || state.completed || state.answer.length !== state.round.word.syllables.length) return snapshot('locked');
+    if (type !== 'validate' || state.completed || state.checked
+      || state.answer.length !== state.round.word.syllables.length) return snapshot('locked');
     if (!isCorrectSyllableAnswer(state.answer, state.round.word.syllables)) {
       state.incorrectAttempts += 1; state.firstTry = false; state.checked = true;
       return snapshot('incorrect');
