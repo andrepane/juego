@@ -1,83 +1,39 @@
-import { createMetalinguisticEngine } from './src/core/metalinguisticEngine.js';
+import { createExerciseRegistry } from './src/core/exerciseRegistry.js';
+import { createOrderSyllablesPlugin } from './src/exercises/orderSyllablesPlugin.js';
 
-const engine = createMetalinguisticEngine();
+const registry = createExerciseRegistry();
+const exercise = registry.register(createOrderSyllablesPlugin());
+const $ = (selector) => document.querySelector(selector);
+const screens = [...document.querySelectorAll('.screen')];
+const refs = { pieces: $('#pieces'), answer: $('#answer'), feedback: $('#feedback'), revealed: $('#revealed-word'), check: $('#check'), next: $('#next'), undo: $('#undo'), clear: $('#clear') };
+let session = { level: 1, total: 5, current: 1, round: null };
 
-const refs = {
-  word: document.querySelector('#word-display'),
-  tiles: document.querySelector('#tiles'),
-  instruction: document.querySelector('#instruction'),
-  answerForm: document.querySelector('#answer-form'),
-  answerInput: document.querySelector('#answer-input'),
-  feedback: document.querySelector('#feedback'),
-  modeBtn: document.querySelector('#mode-btn'),
-  nextBtn: document.querySelector('#next-btn'),
-  wordBtn: document.querySelector('#word-btn')
-};
-
-const state = {
-  mode: 'syllables',
-  word: 'TOMATE',
-  challenge: null
-};
-
-function setFeedback(kind, text) {
-  refs.feedback.className = `feedback ${kind}`;
-  refs.feedback.textContent = text;
+function show(id) { screens.forEach((screen) => { const active = screen.id === id; screen.classList.toggle('active', active); screen.setAttribute('aria-hidden', String(!active)); }); window.scrollTo(0, 0); }
+function renderRound(result) {
+  session.round = result;
+  $('#round-label').textContent = `Ronda ${session.current} de ${session.total}`;
+  $('#score-label').textContent = `Aciertos: ${exercise.getMetrics().score}`;
+  $('#progress-bar').style.width = `${((session.current - 1) / session.total) * 100}%`;
+  refs.pieces.innerHTML = result.pieces.map((piece) => `<button class="piece" type="button" data-piece="${piece.id}">${piece.text}</button>`).join('');
+  renderAnswer(result.answer); refs.feedback.textContent = 'Elige una sílaba para empezar.'; refs.feedback.className = 'feedback'; refs.revealed.textContent = '';
+  refs.check.classList.remove('hidden'); refs.next.classList.add('hidden'); updateControls(result);
 }
-
-function renderTiles() {
-  const total = state.mode === 'syllables'
-    ? state.challenge.baseParts.length
-    : state.word.length;
-
-  refs.tiles.innerHTML = '';
-  for (let i = 0; i < total; i += 1) {
-    const tile = document.createElement('span');
-    tile.className = `tile ${state.mode}`;
-    refs.tiles.appendChild(tile);
-  }
+function renderAnswer(answer) { refs.answer.innerHTML = answer.length ? answer.map((piece) => `<span class="answer-piece">${piece.text}</span>`).join('') : '<span class="placeholder">Aquí aparecerá tu respuesta</span>'; }
+function updateControls(result) { const used = new Set(result.answer.map((piece) => piece.id)); refs.pieces.querySelectorAll('[data-piece]').forEach((button) => { button.disabled = used.has(button.dataset.piece) || result.status === 'correct'; }); refs.undo.disabled = !result.answer.length || result.status === 'correct'; refs.clear.disabled = !result.answer.length || result.status === 'correct'; refs.check.disabled = result.answer.length !== result.expectedLength || result.status === 'correct'; }
+function apply(result) {
+  session.round = result; renderAnswer(result.answer); updateControls(result);
+  if (result.status === 'incorrect') { refs.feedback.textContent = 'El orden no es correcto. Inténtalo de nuevo'; refs.feedback.className = 'feedback error'; }
+  if (result.status === 'correct') { refs.feedback.textContent = '¡Muy bien! Has formado la palabra.'; refs.feedback.className = 'feedback success'; refs.revealed.textContent = result.word; refs.check.classList.add('hidden'); refs.next.classList.remove('hidden'); $('#score-label').textContent = `Aciertos: ${result.score}`; }
 }
-
-function loadChallenge() {
-  state.challenge = engine.createChallenge(state.word, state.mode);
-  refs.word.textContent = state.word;
-  refs.instruction.textContent = state.challenge.instruction;
-  refs.answerInput.value = '';
-  renderTiles();
-  setFeedback('idle', 'Piensa la palabra y escríbela.');
-  refs.answerInput.focus();
-}
-
-function newWord() {
-  state.word = engine.pickWord();
-  loadChallenge();
-}
-
-refs.answerForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const answer = refs.answerInput.value;
-
-  if (engine.isCorrect(state.challenge, answer)) {
-    setFeedback('ok', `Bien. Resultado: ${state.challenge.answer}`);
-    refs.tiles.classList.add('pulse');
-    setTimeout(() => {
-      refs.tiles.classList.remove('pulse');
-      loadChallenge();
-    }, 700);
-    return;
-  }
-
-  setFeedback('error', 'No coincide. Vuelve a intentarlo.');
-  refs.answerInput.select();
-});
-
-refs.modeBtn.addEventListener('click', () => {
-  state.mode = state.mode === 'syllables' ? 'letters' : 'syllables';
-  refs.modeBtn.textContent = state.mode === 'syllables' ? 'Modo: Sílabas' : 'Modo: Letras';
-  loadChallenge();
-});
-
-refs.nextBtn.addEventListener('click', loadChallenge);
-refs.wordBtn.addEventListener('click', newWord);
-
-newWord();
+$('#open-config').addEventListener('click', () => show('config'));
+document.querySelectorAll('[data-home]').forEach((button) => button.addEventListener('click', () => show('home')));
+$('#config-form').addEventListener('submit', (event) => { event.preventDefault(); const data = new FormData(event.currentTarget); session = { level: Number(data.get('level')), total: Number(data.get('rounds')), current: 1, round: null }; show('game'); renderRound(exercise.start({ level: session.level, resetScore: true })); });
+refs.pieces.addEventListener('click', (event) => { const button = event.target.closest('[data-piece]'); if (button) apply(exercise.submit({ type: 'tap', pieceId: button.dataset.piece })); });
+refs.undo.addEventListener('click', () => apply(exercise.submit({ type: 'undo' })));
+refs.clear.addEventListener('click', () => apply(exercise.submit({ type: 'clear' })));
+refs.check.addEventListener('click', () => apply(exercise.submit({ type: 'validate' })));
+refs.next.addEventListener('click', () => { if (session.current >= session.total) { renderSummary(); show('summary'); return; } session.current += 1; renderRound(exercise.next()); });
+function renderSummary() { const m = exercise.getMetrics(); $('#metrics').innerHTML = `<div><strong>${m.roundsPlayed}</strong><span>Rondas realizadas</span></div><div><strong>${m.firstTryCorrect}</strong><span>Al primer intento</span></div><div><strong>${m.incorrectAttempts}</strong><span>Intentos incorrectos</span></div><div><strong>${m.firstTryPercentage}%</strong><span>Acierto al primer intento</span></div>`; $('#word-results').innerHTML = m.results.map((item) => `<li><strong>${item.word}</strong><span>${item.firstTry ? '✓ Al primer intento' : '↻ Necesitó varios intentos'}</span></li>`).join(''); }
+$('#repeat').addEventListener('click', () => show('config'));
+const dialog = $('#exit-dialog'); $('#exit').addEventListener('click', () => dialog.showModal()); $('#cancel-exit').addEventListener('click', () => dialog.close()); $('#confirm-exit').addEventListener('click', () => { dialog.close(); show('home'); });
+show('home');
