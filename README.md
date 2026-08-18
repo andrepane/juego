@@ -6,7 +6,7 @@ LEXIA es una aplicación web estática, *mobile first*, para trabajar habilidade
 
 ### Ordenar sílabas
 
-Presenta las sílabas desordenadas de una palabra del corpus y pide reconstruir la palabra real. Conserva sus tres niveles, interacción, puntuación y selección independiente.
+Combina cinco retos seleccionables: ordenar, completar una sílaba ausente con distractores, retirar una intrusa por identidad, corregir un intercambio y reconstruir tras observar un modelo durante 2, 3 o 5 segundos.
 
 ### Manipular sílabas
 
@@ -16,6 +16,12 @@ Parte de una palabra visible y pide construir un resultado nuevo mediante fichas
 - **Añadir** una sílaba segura al principio, al final o —desde nivel 2— en una posición intermedia.
 - **Sustituir** una sílaba por otra distinta; las consignas precisan la posición cuando hay repeticiones.
 - **Invertir** el orden completo o intercambiar los extremos, según el nivel.
+
+Las operaciones se practican mediante ejecutar una consigna, alcanzar un resultado, identificar la operación, corregir un error controlado o una transformación encadenada de dos pasos. Los perfiles son puntos de partida editables: Inicial excluye memoria y cadenas; Intermedio incorpora ambas de forma pausada; Avanzado permite deducir la operación.
+
+El registro de variantes genera y valida los retos antes de iniciar. Un planificador común equilibra tipos de reto, evita repetir inmediatamente la misma variante y prioriza palabras base diferentes. La disponibilidad muestra los cupos necesarios y disponibles por variante y, en Manipular, también por operación.
+
+Las fichas conservan la alternativa por pulsación y teclado e incorporan arrastre en dispositivos compatibles. Las zonas de trabajo son desplazables en palabras largas, anuncian cambios mediante `aria-live` y desactivan las transiciones con `prefers-reduced-motion`.
 
 Algunos resultados pueden ser **palabras inventadas**. Lo importante es transformar correctamente sus sílabas. La interfaz no clasifica el resultado como real o inventado: el corpus local es limitado y no constituye un diccionario fiable.
 
@@ -48,9 +54,10 @@ npm test
 ## Organización
 
 - `main.js`: registro, navegación y presentación de las dos sesiones.
-- `src/exercises/orderSyllablesPlugin.js` y `orderSyllablesConfig.js`: motor y reglas exclusivos de Ordenar sílabas.
+- `src/exercises/orderSyllablesPlugin.js`, `orderSyllablesVariants.js` y `orderSyllablesConfig.js`: sesión, registro de variantes y reglas de Ordenar sílabas.
 - `src/exercises/manipulateSyllablesPlugin.js` y `manipulateSyllablesConfig.js`: motor, métricas, niveles e inventario seguro exclusivos de Manipular sílabas.
 - `src/core/exerciseRegistry.js`: contrato y registro común de plugins.
+- `src/core/challengePlanner.js`: planificación equilibrada reutilizable por variante.
 - `src/core/wordUtils.js`: acceso y filtros compartidos del corpus.
 - `src/data/words/`: banco curado por categorías y muestra procesada del corpus general.
 - `test/`: suites deterministas de ambas actividades.

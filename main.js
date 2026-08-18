@@ -10,7 +10,7 @@ const manipulation = registry.register(createManipulateSyllablesPlugin());
 const $ = (selector) => document.querySelector(selector);
 const screens = [...document.querySelectorAll('.screen')];
 const refs = { pieces: $('#pieces'), answer: $('#answer'), feedback: $('#feedback'), helper: $('#order-helper'), guidance: $('#order-guidance'), helpToggle: $('#order-help-toggle'), revealed: $('#revealed-word'), check: $('#check'), next: $('#next'), undo: $('#undo'), clear: $('#clear'), editControls: $('#game .edit-controls'), emptyBack: $('#empty-back'), progress: $('#game .progress') };
-let session = { level: 1, total: 5, current: 1, round: null };
+let session = { level: 1, total: 5, current: 1, round: null, selectedAnswerIndex: null };
 const orderConfigurator = createSessionConfigurator($('#config-form'), 'order-syllables');
 const manipConfigurator = createSessionConfigurator($('#manip-config-form'), 'manipulate-syllables');
 
@@ -21,7 +21,7 @@ function renderRound(result) {
     return;
   }
   session.round = result;
-  $('#round-label').textContent = `Ronda ${session.current} de ${session.total}`;
+  $('#round-label').textContent = `Ronda ${session.current} de ${session.total} · ${result.variantLabel ?? 'Ordenar la palabra'}`;
   $('#score-label').textContent = `Al primer intento: ${exercise.getMetrics().firstTryCorrect}`;
   const progress = calculateRoundProgress(session.current, session.total);
   $('#progress-bar').style.width = `${progress}%`;
@@ -29,9 +29,10 @@ function renderRound(result) {
   refs.progress.setAttribute('aria-valuemax', '100');
   refs.progress.setAttribute('aria-valuenow', String(progress));
   refs.progress.setAttribute('aria-valuetext', `Ronda ${session.current} de ${session.total}`);
-  refs.pieces.innerHTML = result.pieces.map((piece) => `<button class="piece" type="button" data-piece="${piece.id}">${piece.text}</button>`).join('');
+  refs.pieces.innerHTML = result.pieces.map((piece) => `<button class="piece" type="button" draggable="true" data-piece="${piece.id}">${piece.text}</button>`).join('');
   const policy = orderConfigurator.getPolicy(); const showHelp = policy.alwaysShowHelp; refs.helper.classList.toggle('hidden', !showHelp); refs.helpToggle.classList.toggle('hidden', policy.alwaysShowHelp); refs.helpToggle.setAttribute('aria-expanded', String(showHelp)); refs.guidance.classList.add('hidden'); $('#order-instruction').textContent = policy.explicitFeedback ? 'Pulsa cada sílaba de izquierda a derecha para construir la palabra. Después comprueba tu respuesta.' : 'Selecciona las sílabas en el orden correcto.';
   renderAnswer(result.answer); refs.feedback.textContent = 'Elige una sílaba para empezar.'; refs.feedback.className = 'feedback'; refs.revealed.textContent = '';
+  $('#game-title').textContent = result.variantLabel ?? 'Forma la palabra'; $('#order-instruction').textContent = result.instruction;
   refs.check.classList.remove('hidden'); refs.next.classList.add('hidden'); refs.editControls.classList.remove('hidden'); refs.emptyBack.classList.add('hidden'); updateControls(result);
 }
 function renderEmptyState() {
@@ -46,11 +47,11 @@ function renderEmptyState() {
   refs.editControls.classList.add('hidden');
   refs.emptyBack.classList.remove('hidden');
 }
-function renderAnswer(answer) { refs.answer.innerHTML = answer.length ? answer.map((piece) => `<span class="answer-piece">${piece.text}</span>`).join('') : '<span class="placeholder">Aquí aparecerá tu respuesta</span>'; }
+function renderAnswer(answer) { refs.answer.innerHTML = answer.length ? answer.map((piece, index) => `<button class="answer-piece${session.selectedAnswerIndex === index ? ' selected' : ''}" type="button" draggable="true" data-answer-index="${index}" data-piece="${piece.id}" aria-label="${piece.text}, posición ${index + 1}">${piece.text}</button>`).join('') : '<span class="placeholder">Aquí aparecerá tu respuesta</span>'; }
 function updateControls(result) { const used = new Set(result.answer.map((piece) => piece.id)); refs.pieces.querySelectorAll('[data-piece]').forEach((button) => { button.disabled = used.has(button.dataset.piece) || result.status === 'correct'; }); refs.undo.disabled = !result.answer.length || result.status === 'correct'; refs.clear.disabled = !result.answer.length || result.status === 'correct'; refs.check.disabled = result.answer.length !== result.expectedLength || ['correct', 'incorrect', 'locked'].includes(result.status); }
 function apply(result) {
   session.round = result; renderAnswer(result.answer); updateControls(result);
-  if (result.status === 'incorrect') { refs.feedback.textContent = 'El orden no es correcto. Inténtalo de nuevo.'; refs.feedback.className = 'feedback error'; if (orderConfigurator.getPolicy().explicitFeedback) { refs.guidance.textContent = 'Di la palabra despacio y revisa qué sílaba debería ir antes, sin cambiar todas a la vez.'; refs.guidance.classList.remove('hidden'); } }
+  if (result.status === 'incorrect') { refs.feedback.textContent = orderConfigurator.getPolicy().explicitFeedback ? result.hint : 'Revisa la consigna y prueba un cambio concreto.'; refs.feedback.className = 'feedback error'; if (orderConfigurator.getPolicy().explicitFeedback) { refs.guidance.textContent = result.hint; refs.guidance.classList.remove('hidden'); } }
   if (result.status === 'correct') { refs.feedback.textContent = '¡Muy bien! Has formado la palabra.'; refs.feedback.className = 'feedback success'; refs.revealed.textContent = result.word; refs.check.classList.add('hidden'); refs.next.classList.remove('hidden'); $('#score-label').textContent = `Al primer intento: ${exercise.getMetrics().firstTryCorrect}`; }
 }
 $('#open-config').addEventListener('click', () => show('config'));
@@ -58,6 +59,11 @@ $('#open-manip-config').addEventListener('click', () => show('manip-config'));
 document.querySelectorAll('[data-home]').forEach((button) => button.addEventListener('click', () => show('home')));
 $('#config-form').addEventListener('submit', (event) => { event.preventDefault(); const config = orderConfigurator.getConfig(); session = { config, total: config.rounds, current: 1, round: null }; configureProfessionalBar('order', exercise, orderConfigurator.getPolicy()); show('game'); renderRound(exercise.start(config)); });
 refs.pieces.addEventListener('click', (event) => { const button = event.target.closest('[data-piece]'); if (button) apply(exercise.submit({ type: 'tap', pieceId: button.dataset.piece })); });
+refs.answer.addEventListener('click', event => { const button = event.target.closest('[data-answer-index]'); if (!button) return; const index = Number(button.dataset.answerIndex); if (session.round.variant === 'intruder') return apply(exercise.submit({ type: 'remove-piece', pieceId: button.dataset.piece })); if (session.selectedAnswerIndex == null) { session.selectedAnswerIndex = index; renderAnswer(session.round.answer); } else { const fromIndex = session.selectedAnswerIndex; session.selectedAnswerIndex = null; apply(exercise.submit({ type: 'move', fromIndex, toIndex: index })); } });
+let draggedOrder = null;
+document.addEventListener('dragstart', event => { const piece = event.target.closest('[data-piece]'); if (piece) draggedOrder = { pieceId: piece.dataset.piece, fromIndex: piece.dataset.answerIndex == null ? null : Number(piece.dataset.answerIndex) }; });
+refs.answer.addEventListener('dragover', event => event.preventDefault());
+refs.answer.addEventListener('drop', event => { event.preventDefault(); const target = event.target.closest('[data-answer-index]'); if (!draggedOrder) return; const result = draggedOrder.fromIndex == null ? exercise.submit({ type: 'tap', pieceId: draggedOrder.pieceId }) : exercise.submit({ type: 'drop', fromIndex: draggedOrder.fromIndex, toIndex: target ? Number(target.dataset.answerIndex) : session.round.answer.length - 1 }); draggedOrder = null; apply(result); });
 refs.undo.addEventListener('click', () => apply(exercise.submit({ type: 'undo' })));
 refs.clear.addEventListener('click', () => apply(exercise.submit({ type: 'clear' })));
 refs.check.addEventListener('click', () => apply(exercise.submit({ type: 'validate' })));
@@ -72,7 +78,7 @@ show('home');
 const manip = { result: null, seenHelp: new Set() };
 const manipRefs = { workspace: $('#manip-workspace'), extraZone: $('#manip-extra-zone'), extra: $('#manip-extra'), extraLabel: $('#manip-extra-label'), helper: $('#manip-helper'), helpToggle: $('#manip-help-toggle'), announcement: $('#manip-announcement'), feedback: $('#manip-feedback'), check: $('#manip-check'), next: $('#manip-next'), undo: $('#manip-undo'), reset: $('#manip-reset') };
 const operationLabels = Object.fromEntries(Object.values(MANIPULATION_OPERATIONS).map((item) => [item.id, item.label]));
-const pieceButton = (piece, action, selected, disabled) => `<button class="piece manip-piece${selected ? ' selected' : ''}" type="button" data-action="${action}" data-piece="${piece.id}"${action.includes('select') ? ` aria-pressed="${selected}"` : ''}${disabled ? ' disabled' : ''}>${piece.text}${selected ? '<span class="selection-mark" aria-hidden="true">✓</span>' : ''}</button>`;
+const pieceButton = (piece, action, selected, disabled) => `<button class="piece manip-piece${selected ? ' selected' : ''}" type="button" draggable="${!disabled}" data-action="${action}" data-piece="${piece.id}"${action.includes('select') ? ` aria-pressed="${selected}"` : ''}${disabled ? ' disabled' : ''}>${piece.text}${selected ? '<span class="selection-mark" aria-hidden="true">✓</span>' : ''}</button>`;
 function insertionLabel(index, pieces) { if (index === 0) return 'Insertar al principio'; if (index === pieces.length) return 'Insertar al final'; return `Insertar después de ${pieces[index - 1].text.toLocaleUpperCase('es')}`; }
 function renderManipWorkspace(result) {
   const selected = result.selectedPieceId;
@@ -95,7 +101,7 @@ function updateManip(result) {
 }
 function renderManipRound(result) {
   if (result.status === 'insufficient') { show('manip-config'); return; }
-  manip.result = result; $('#manip-round-label').textContent = `Ronda ${result.round} de ${result.total}`; $('#manip-operation').textContent = `Operación: ${operationLabels[result.operation]}`;
+  manip.result = result; $('#manip-round-label').textContent = `Ronda ${result.round} de ${result.total} · ${result.variantLabel}`; $('#manip-operation').textContent = `Operación: ${operationLabels[result.operation]}`;
   $('#manip-base').textContent = result.baseWord; const policy = manipConfigurator.getPolicy(); $('#manip-instruction').textContent = policy.explicitFeedback ? `${result.instruction} Sigue los pasos de la ayuda.` : result.instruction; manipRefs.helper.textContent = result.helperInstruction; const showHelp = policy.alwaysShowHelp; manipRefs.helper.classList.toggle('hidden', !showHelp); manipRefs.helpToggle.classList.toggle('hidden', policy.alwaysShowHelp); manipRefs.helpToggle.setAttribute('aria-expanded', String(showHelp));
   const progress = calculateRoundProgress(result.round, result.total); $('#manip-progress-bar').style.width = `${progress}%`; const bar = $('#manip-progress'); bar.setAttribute('aria-valuemin', '0'); bar.setAttribute('aria-valuemax', '100'); bar.setAttribute('aria-valuenow', progress); bar.setAttribute('aria-valuetext', `Ronda ${result.round} de ${result.total}`);
   $('#manip-revealed').textContent = ''; manipRefs.check.classList.remove('hidden'); manipRefs.next.classList.add('hidden'); updateManip(result);
@@ -103,6 +109,11 @@ function renderManipRound(result) {
 $('#manip-config-form').addEventListener('submit', (event) => { event.preventDefault(); manip.seenHelp.clear(); const config = manipConfigurator.getConfig(); configureProfessionalBar('manip', manipulation, manipConfigurator.getPolicy()); const result = manipulation.start(config); if (result.status === 'insufficient') { manipConfigurator.setStartError('No se puede iniciar: faltan retos únicos para completar la distribución equilibrada por operación. Revisa la disponibilidad.'); return; } show('manip-game'); renderManipRound(result); });
 function handleManipAction(event) { const button = event.target.closest('[data-action]'); if (!button || button.dataset.action === 'none') return; const action = { type: button.dataset.action }; if (button.dataset.piece) action.pieceId = button.dataset.piece; if (button.dataset.slot !== undefined) action.slotIndex = Number(button.dataset.slot); const result = manipulation.submit(action); updateManip(result); requestAnimationFrame(() => { const selected = document.querySelector(`[data-piece="${result.selectedPieceId}"]`); (selected || (result.canValidate ? manipRefs.check : manipRefs.workspace.querySelector('button:not(:disabled)')) || manipRefs.undo).focus(); }); }
 manipRefs.workspace.addEventListener('click', handleManipAction); manipRefs.helpToggle.addEventListener('click', () => { if (manipConfigurator.getPolicy().alwaysShowHelp) return; const expanded = manipRefs.helpToggle.getAttribute('aria-expanded') === 'true'; manipRefs.helpToggle.setAttribute('aria-expanded', String(!expanded)); manipRefs.helper.classList.toggle('hidden', expanded); }); manipRefs.extra.addEventListener('click', handleManipAction);
+let draggedManipPiece = null;
+manipRefs.extra.addEventListener('dragstart', event => { const piece = event.target.closest('[data-piece]'); if (piece) { draggedManipPiece = piece.dataset.piece; updateManip(manipulation.submit({ type: 'select-extra', pieceId: draggedManipPiece })); } });
+manipRefs.workspace.addEventListener('dragover', event => event.preventDefault());
+manipRefs.workspace.addEventListener('dragstart', event => { const piece = event.target.closest('[data-piece]'); if (piece && manip.result.operation === 'invert') { draggedManipPiece = piece.dataset.piece; updateManip(manipulation.submit({ type: 'select-swap-piece', pieceId: draggedManipPiece })); } });
+manipRefs.workspace.addEventListener('drop', event => { event.preventDefault(); const slot = event.target.closest('[data-slot]'); const piece = event.target.closest('[data-piece]'); if (slot && draggedManipPiece) updateManip(manipulation.submit({ type: 'insert-at', slotIndex: Number(slot.dataset.slot) })); else if (piece && draggedManipPiece) updateManip(manipulation.submit({ type: manip.result.operation === 'replace' ? 'replace-piece' : 'select-swap-piece', pieceId: piece.dataset.piece })); draggedManipPiece = null; });
 manipRefs.undo.addEventListener('click', () => updateManip(manipulation.submit({ type: 'undo' }))); manipRefs.reset.addEventListener('click', () => updateManip(manipulation.submit({ type: 'reset' }))); manipRefs.check.addEventListener('click', () => { const result = manipulation.submit({ type: 'validate' }); updateManip(result); requestAnimationFrame(() => (result.status === 'correct' ? manipRefs.next : manipRefs.undo.disabled ? manipRefs.reset : manipRefs.undo).focus()); });
 manipRefs.next.addEventListener('click', () => { const result = manipulation.next(); if (result.status === 'complete') { renderManipSummary(); show('manip-summary'); } else renderManipRound(result); });
 function renderManipSummary() { const m = manipulation.getMetrics(); $('#manip-metrics').innerHTML = commonMetrics(m); $('#manip-groups').innerHTML = Object.entries(m.byOperation).filter(([, value]) => value.rounds).map(([key, value]) => `<div><strong>${operationLabels[key]}</strong><br>${value.rounds} rondas · ${value.firstTryCorrect} al primer intento · ${value.incorrectAttempts} ${value.incorrectAttempts === 1 ? 'error' : 'errores'}</div>`).join(''); $('#manip-interaction').textContent = `${m.totalMovements} movimientos · ${m.totalUndoUses} usos de Deshacer · ${m.totalResetUses} usos de Reiniciar · ${m.therapistRestarts} reinicios profesionales`; $('#manip-results').innerHTML = m.results.map((item) => `<li><span><strong>${item.baseWord}</strong> · ${operationLabels[item.operation]}<br>${item.instruction}${item.status === 'skipped' ? '' : `<br>Resultado: ${item.result}`}<br></span><span>${item.status === 'skipped' ? 'Omitida' : item.firstTry ? '✓ Primer intento' : '↻ Varios intentos'}</span></li>`).join(''); }

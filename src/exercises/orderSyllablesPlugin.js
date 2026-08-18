@@ -1,120 +1,54 @@
 import { getFilteredWords, normalizeSpanish, shuffleArray, wordMatchesLinguistic } from '../core/wordUtils.js';
-import { createRecentHistory } from '../core/recentHistory.js';
 import { resolveOrderLevel } from './orderSyllablesConfig.js';
 import { migrateLegacyLevelConfig, normalizeSessionConfig } from '../core/sessionConfig.js';
+import { buildOrderChallengePool, ORDER_VARIANTS } from './orderSyllablesVariants.js';
+import { planBalancedVariants } from '../core/challengePlanner.js';
 
 export function ensureReorderedSyllables(syllables, random = Math.random) {
-  if (!Array.isArray(syllables)) return [];
-  if (syllables.length < 2) return [...syllables];
-  if (new Set(syllables).size < 2) return null;
-  const original = syllables.join('\u0000');
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const candidate = shuffleArrayWith(syllables, random);
-    if (candidate.join('\u0000') !== original) return candidate;
-  }
-  const reordered = [...syllables];
-  const differentIndex = reordered.findIndex((value) => value !== reordered[0]);
-  [reordered[0], reordered[differentIndex]] = [reordered[differentIndex], reordered[0]];
-  return reordered;
+  if (!Array.isArray(syllables)) return []; if (syllables.length < 2) return [...syllables];
+  if (new Set(syllables.map(normalizeSpanish)).size < 2) return null;
+  for (let n = 0; n < 12; n += 1) { const result = random === Math.random ? shuffleArray(syllables) : shuffled(syllables, random); if (result.some((v, i) => normalizeSpanish(v) !== normalizeSpanish(syllables[i]))) return result; }
+  const result = [...syllables]; const i = result.findIndex(v => normalizeSpanish(v) !== normalizeSpanish(result[0])); [result[0], result[i]] = [result[i], result[0]]; return result;
 }
+export const isOrderableWord = word => { const values = Array.isArray(word) ? word : word?.syllables; return Array.isArray(values) && values.length >= 2 && new Set(values.map(normalizeSpanish)).size >= 2; };
+export const calculateRoundProgress = (current, total) => !Number.isFinite(Number(total)) || Number(total) <= 0 ? 0 : Math.round(Math.min(Math.max(Number(current), 0), Number(total)) / Number(total) * 100);
+export const isCorrectSyllableAnswer = (answer, syllables) => answer.length === syllables.length && answer.every((piece, i) => normalizeSpanish(piece.text ?? piece) === normalizeSpanish(syllables[i]));
 
-export function isOrderableWord(word) {
-  const syllables = Array.isArray(word) ? word : word?.syllables;
-  return Array.isArray(syllables) && syllables.length >= 2 && new Set(syllables).size >= 2;
-}
-
-export function calculateRoundProgress(currentRound, totalRounds) {
-  const current = Number(currentRound);
-  const total = Number(totalRounds);
-  if (!Number.isFinite(current) || !Number.isFinite(total) || total <= 0) return 0;
-  return Math.round(Math.min(Math.max(current, 0), total) / total * 100);
-}
-
-function shuffleArrayWith(values, random) {
-  if (random === Math.random) return shuffleArray(values);
-  const result = [...values];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const target = Math.floor(random() * (index + 1));
-    [result[index], result[target]] = [result[target], result[index]];
-  }
-  return result;
-}
-
-export function isCorrectSyllableAnswer(answer, syllables) {
-  return answer.length === syllables.length
-    && answer.every((piece, index) => normalizeSpanish(piece.text ?? piece) === normalizeSpanish(syllables[index]));
-}
-
-export function createOrderSyllablesPlugin({ random = Math.random, getWords = getFilteredWords } = {}) {
-  const history = createRecentHistory(Number.MAX_SAFE_INTEGER);
-  const state = { level: 1, config: null, round: null, answer: [], score: 0, incorrectAttempts: 0,
-    completed: false, checked: false, firstTry: true, results: [], plannedRounds: 0, therapistRestarts: 0, endedEarly: false };
-
-  function snapshot(status = 'ready') {
-    return { status, level: state.level, pieces: state.round?.pieces ?? [], answer: [...state.answer],
-      expectedLength: state.round?.word.syllables.length ?? 0, wordId: state.round?.word.id,
-      word: status === 'correct' ? state.round.word.text : undefined, score: state.score };
-  }
-
-  function makeRound() {
-    const candidates = (state.config ? getWords({}).filter(word => wordMatchesLinguistic(word, state.config.linguistic)) : getWords(resolveOrderLevel(state.level).linguisticFilters)).filter(isOrderableWord);
-    const fresh = candidates.filter((word) => !history.has(word.id));
-    const word = getRandomWordWith(fresh.length ? fresh : candidates, random);
-    if (!word) return null;
-    const shuffled = ensureReorderedSyllables(word.syllables, random);
-    if (!shuffled) return null;
-    return { word: { id: word.id, text: word.word, syllables: [...word.syllables] },
-      pieces: shuffled.map((text, index) => ({ id: `piece-${index}`, text })) };
-  }
-
+export function createOrderSyllablesPlugin({ random = Math.random, getWords = getFilteredWords, clock = () => Date.now(), setTimer = setTimeout } = {}) {
+  const s = { challenges: [], index: 0, answer: [], completed: false, checked: false, firstTry: true, results: [], plannedRounds: 0, incorrectAttempts: 0, therapistRestarts: 0, endedEarly: false, movements: 0, undoUses: 0, resetUses: 0, startedAt: 0, memoryVisible: false, legacy: false };
+  const round = () => s.challenges[s.index];
+  const expected = () => round().targetPieces;
+  const correct = () => s.answer.length === expected().length && s.answer.every((p, i) => p.id === expected()[i].id || (round().variant !== 'intruder' && normalizeSpanish(p.text) === normalizeSpanish(expected()[i].text)));
+  function snapshot(status = 'ready') { const r = round(); if (!r) return { status: 'empty' }; return { status, round: s.index + 1, total: s.challenges.length, variant: r.variant, variantLabel: r.variantLabel, instruction: r.instruction, pieces: r.initialPieces, answer: [...s.answer], expectedLength: expected().length, wordId: r.word.id, word: status === 'correct' ? r.word.text : undefined, score: s.results.filter(x => x.status !== 'skipped').length, template: r.template, targetPosition: r.targetPosition, distractors: r.distractors, model: s.memoryVisible ? r.model : undefined, memoryVisible: s.memoryVisible, hint: ORDER_VARIANTS[r.variant].hint }; }
+  function prepare() { const r = round(); s.answer = ['intruder', 'correctOrder'].includes(r.variant) ? structuredClone(r.initialPieces) : []; s.completed = false; s.checked = false; s.firstTry = true; s.startedAt = clock(); s.memoryVisible = r.variant === 'memory'; if (s.memoryVisible) setTimer(() => { s.memoryVisible = false; }, r.exposureMs); }
   function start(options = {}) {
-    const legacy = !options.activityId && options.level != null;
-    const config = normalizeSessionConfig(legacy ? migrateLegacyLevelConfig('order-syllables', options.level, options) : { activityId: 'order-syllables', ...options });
-    state.config = legacy ? null : config; state.level = Number(options.level ?? state.level); state.plannedRounds = config.rounds;
-    const resetScore = options.resetScore ?? true;
-    if (resetScore) { state.score = 0; state.incorrectAttempts = 0; state.results = []; state.therapistRestarts = 0; state.endedEarly = false; history.clear(); }
-    state.answer = []; state.completed = false; state.checked = false; state.firstTry = true;
-    state.round = makeRound();
-    return state.round ? snapshot() : { status: 'empty' };
+    const legacy = !options.activityId && options.level != null; const config = normalizeSessionConfig(legacy ? migrateLegacyLevelConfig('order-syllables', options.level, options) : { activityId: 'order-syllables', ...options });
+    const words = getWords(legacy ? resolveOrderLevel(options.level).linguisticFilters : {}).filter(word => (!legacy ? wordMatchesLinguistic(word, config.linguistic) : true) && isOrderableWord(word));
+    const variants = legacy ? ['order'] : config.activityOptions.variants; let pool = buildOrderChallengePool(words, { ...config.activityOptions, variants }, random);
+    if (!pool.length) return { status: 'empty' };
+    pool = pool.map(challenge => ({ ...challenge, initialPieces: challenge.initialPieces.map((piece, index) => ({ ...piece, id: `piece-${index}` })) }));
+    const plan = legacy ? { status: 'ready', challenges: pool } : planBalancedVariants(pool, variants, config.rounds, random);
+    if (plan.status !== 'ready') return { status: 'insufficient', ...plan };
+    Object.assign(s, { challenges: plan.challenges, index: 0, results: [], plannedRounds: config.rounds, incorrectAttempts: 0, therapistRestarts: 0, endedEarly: false, movements: 0, undoUses: 0, resetUses: 0, legacy }); prepare(); return snapshot();
   }
-
-  function submit({ type, pieceId } = {}) {
-    if (!state.round) return { status: 'empty' };
-    if (type === 'tap') {
-      if (state.completed || state.answer.some((piece) => piece.id === pieceId)) return snapshot('locked');
-      const piece = state.round.pieces.find((item) => item.id === pieceId);
-      if (!piece) return snapshot('idle');
-      state.answer.push(piece); state.checked = false;
-      return snapshot('progress');
-    }
-    if (type === 'undo') { if (!state.completed) state.answer.pop(); state.checked = false; return snapshot('progress'); }
-    if (type === 'clear') { if (!state.completed) state.answer = []; state.checked = false; return snapshot('progress'); }
-    if (type !== 'validate' || state.completed || state.checked
-      || state.answer.length !== state.round.word.syllables.length) return snapshot('locked');
-    if (!isCorrectSyllableAnswer(state.answer, state.round.word.syllables)) {
-      state.incorrectAttempts += 1; state.firstTry = false; state.checked = true;
-      return snapshot('incorrect');
-    }
-    state.completed = true; state.score += 1; history.add(state.round.word.id);
-    state.results.push({ word: state.round.word.text, firstTry: state.firstTry });
-    return snapshot('correct');
+  function submit({ type, pieceId, fromIndex, toIndex } = {}) {
+    if (!round()) return { status: 'empty' }; if (s.completed) return snapshot('locked');
+    if (type === 'tap') { const p = round().initialPieces.find(x => x.id === pieceId); if (!p || s.answer.some(x => x.id === pieceId)) return snapshot('locked'); s.answer.push(p); s.checked = false; s.movements += 1; return snapshot('progress'); }
+    if (type === 'remove-piece') { const i = s.answer.findIndex(x => x.id === pieceId); if (i < 0) return snapshot('idle'); s.answer.splice(i, 1); s.checked = false; s.movements += 1; return snapshot('progress'); }
+    if (type === 'move' || type === 'drop') { if (!Number.isInteger(fromIndex) || !Number.isInteger(toIndex) || fromIndex < 0 || fromIndex >= s.answer.length || toIndex < 0 || toIndex >= s.answer.length) return snapshot('locked'); const [p] = s.answer.splice(fromIndex, 1); s.answer.splice(toIndex, 0, p); s.checked = false; s.movements += 1; return snapshot('progress'); }
+    if (type === 'undo') { if (s.answer.length) s.answer.pop(); s.checked = false; s.undoUses += 1; return snapshot('progress'); }
+    if (type === 'clear') { s.answer = ['intruder', 'correctOrder'].includes(round().variant) ? structuredClone(round().initialPieces) : []; s.checked = false; s.resetUses += 1; return snapshot('progress'); }
+    if (type !== 'validate' || s.checked || s.answer.length !== expected().length) return snapshot('locked');
+    if (!correct()) { s.incorrectAttempts += 1; s.firstTry = false; s.checked = true; return snapshot('incorrect'); }
+    s.completed = true; s.results.push(resultRecord()); return snapshot('correct');
   }
-
-  function next() { if (!state.completed) return snapshot('locked'); state.answer = []; state.completed = false; state.checked = false; state.firstTry = true; state.round = makeRound(); return state.round ? snapshot() : { status: 'empty' }; }
-  function restartRound() { if (!state.round || state.completed) return snapshot('locked'); state.therapistRestarts += 1; state.answer = []; state.checked = false; return snapshot(); }
-  function skipRound() { if (!state.round || state.completed) return snapshot('locked'); state.results.push({ word: state.round.word.text, status: 'skipped', firstTry: false }); state.completed = true; return snapshot('skipped'); }
-  function finishSession() { state.endedEarly = true; return getMetrics(); }
-  function getMetrics() {
-    const completed = state.results.filter(item => item.status !== 'skipped'); const skippedRounds = state.results.length - completed.length;
-    const firstTryCorrect = completed.filter((item) => item.firstTry).length;
-    return { score: state.score, roundsPlayed: completed.length, plannedRounds: state.plannedRounds, completedRounds: completed.length, correctRounds: completed.length, skippedRounds, uncompletedRounds: Math.max(0, state.plannedRounds - completed.length - skippedRounds), therapistRestarts: state.therapistRestarts, endedEarly: state.endedEarly, firstTryCorrect,
-      incorrectAttempts: state.incorrectAttempts,
-      firstTryPercentage: completed.length ? Math.round(firstTryCorrect / completed.length * 100) : 0,
-      results: state.results.map((item) => ({ ...item })), recentWordIds: history.snapshot() };
-  }
+  const resultRecord = (status) => ({ word: round().baseWord, baseWord: round().baseWord, variant: round().variant, operation: null, targetPosition: round().targetPosition, status, firstTry: status ? false : s.firstTry, incorrectAttempts: s.firstTry ? 0 : 1, helpUses: 0, movements: s.movements, durationMs: Math.max(0, clock() - s.startedAt) });
+  function next() { if (!s.completed) return snapshot('locked'); if (++s.index >= s.challenges.length) return { status: 'complete' }; prepare(); return snapshot(); }
+  function restartRound() { if (s.completed) return snapshot('locked'); s.therapistRestarts += 1; s.firstTry = false; prepare(); s.firstTry = false; return snapshot(); }
+  function skipRound() { if (s.completed) return snapshot('locked'); s.results.push(resultRecord('skipped')); s.completed = true; return snapshot('skipped'); }
+  function finishSession() { s.endedEarly = true; return getMetrics(); }
+  function getMetrics() { const done = s.results.filter(x => x.status !== 'skipped'); const skippedRounds = s.results.length - done.length; const byVariant = Object.fromEntries(Object.keys(ORDER_VARIANTS).map(v => [v, aggregate(done.filter(x => x.variant === v))])); return { score: done.length, roundsPlayed: done.length, plannedRounds: s.plannedRounds, completedRounds: done.length, correctRounds: done.length, skippedRounds, uncompletedRounds: Math.max(0, s.plannedRounds - s.results.length), therapistRestarts: s.therapistRestarts, endedEarly: s.endedEarly, firstTryCorrect: done.filter(x => x.firstTry).length, incorrectAttempts: s.incorrectAttempts, firstTryPercentage: done.length ? Math.round(done.filter(x => x.firstTry).length / done.length * 100) : 0, totalMovements: s.movements, totalUndoUses: s.undoUses, totalResetUses: s.resetUses, byVariant, results: structuredClone(s.results), recentWordIds: s.results.map(x => x.baseWord) }; }
   return { id: 'order-syllables', start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState: getMetrics };
 }
-
-function getRandomWordWith(words, random) {
-  return words.length ? words[Math.floor(random() * words.length)] : null;
-}
+function aggregate(items) { return { rounds: items.length, firstTryCorrect: items.filter(x => x.firstTry).length, incorrectAttempts: items.reduce((n, x) => n + x.incorrectAttempts, 0) }; }
+function shuffled(values, random) { const r = [...values]; for (let i = r.length - 1; i; i -= 1) { const j = Math.floor(random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
