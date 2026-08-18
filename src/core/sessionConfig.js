@@ -72,10 +72,15 @@ export function validateSessionConfig(config) {
   return { valid: errors.length === 0, errors };
 }
 
-const comparable = config => { const normalized = normalizeSessionConfig(config); delete normalized.presetId; return normalized; };
+// El perfil describe únicamente el contenido pedagógico. La modalidad y la
+// duración pertenecen a la sesión y, por tanto, no intervienen en su detección.
+const comparable = config => {
+  const normalized = normalizeSessionConfig(config);
+  return { linguistic: normalized.linguistic, activityOptions: normalized.activityOptions };
+};
 export function configurationMatchesPreset(config, presetId) {
   if (presetId === 'custom') return false;
-  const preset = applyPreset(config.activityId, presetId); preset.mode = config.mode; // El modo es independiente del perfil pedagógico.
+  const preset = applyPreset(config.activityId, presetId);
   return JSON.stringify(comparable(config)) === JSON.stringify(comparable(preset));
 }
 export function detectPreset(config) {

@@ -22,3 +22,17 @@
 .professional-bar strong { margin-right: auto; color: #29485e; }
 .danger { color: #8b1e18; border-color: #b42318; }
 @media (max-width: 560px) { .professional-bar { align-items: stretch; flex-direction: column; } .professional-bar strong { margin: 0; } }
+
+/* Jerarquía clínica de configuración y ayudas pedagógicas */
+.session-config > fieldset, .session-config > section { margin-block: 1rem; }
+.session-config .pedagogical-options { border-inline-start: .3rem solid var(--primary, #356a88); background: #f7fafc; }
+.session-config .round-options { padding: .35rem; background: #eef3f6; border-radius: .65rem; }
+.operation-availability { margin: .75rem 0 0; }
+.operation-availability div { display: flex; justify-content: space-between; gap: 1rem; padding: .35rem 0; border-top: 1px solid #d9e2e8; }
+.operation-availability dt { font-weight: 700; }
+.operation-availability dd { margin: 0; }
+.manip-helper { padding: .8rem 1rem; border-inline-start: .25rem solid #39708f; background: #eef6fa; border-radius: .4rem; }
+.manip-helper p { margin: .25rem 0; }
+.professional-bar { align-items: center; gap: .5rem; flex-wrap: wrap; }
+button, .choice, .option { min-height: 44px; }
+@media (max-width: 640px) { .operation-availability div { display: block; } .professional-bar button { width: 100%; } }
