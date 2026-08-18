@@ -38,6 +38,13 @@ export function getWordComplexity(word) {
   return 'simple';
 }
 
+export function wordMatchesLinguistic(word, linguistic) {
+  const normalizedCount = word.syllableCount >= 4 ? 4 : word.syllableCount;
+  return linguistic.syllableCounts.includes(normalizedCount)
+    && linguistic.complexities.includes(getWordComplexity(word))
+    && linguistic.frequencies.includes(word.frequency);
+}
+
 export function getFilteredWords(filters = {}) {
   const { difficulty, category, syllableCount, frequency, structure, complexity } = filters;
 
