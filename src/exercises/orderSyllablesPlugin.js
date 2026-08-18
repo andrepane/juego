@@ -101,13 +101,13 @@ export function createOrderSyllablesPlugin({ random = Math.random, getWords = ge
   }
 
   function next() { if (!state.completed) return snapshot('locked'); state.answer = []; state.completed = false; state.checked = false; state.firstTry = true; state.round = makeRound(); return state.round ? snapshot() : { status: 'empty' }; }
-  function restartRound() { if (!state.round || state.completed) return snapshot('locked'); state.therapistRestarts += 1; state.answer = []; state.checked = false; state.firstTry = true; return snapshot(); }
+  function restartRound() { if (!state.round || state.completed) return snapshot('locked'); state.therapistRestarts += 1; state.answer = []; state.checked = false; return snapshot(); }
   function skipRound() { if (!state.round || state.completed) return snapshot('locked'); state.results.push({ word: state.round.word.text, status: 'skipped', firstTry: false }); state.completed = true; return snapshot('skipped'); }
   function finishSession() { state.endedEarly = true; return getMetrics(); }
   function getMetrics() {
     const completed = state.results.filter(item => item.status !== 'skipped'); const skippedRounds = state.results.length - completed.length;
     const firstTryCorrect = completed.filter((item) => item.firstTry).length;
-    return { score: state.score, roundsPlayed: completed.length, plannedRounds: state.plannedRounds, completedRounds: completed.length, correctRounds: completed.length, skippedRounds, therapistRestarts: state.therapistRestarts, endedEarly: state.endedEarly, firstTryCorrect,
+    return { score: state.score, roundsPlayed: completed.length, plannedRounds: state.plannedRounds, completedRounds: completed.length, correctRounds: completed.length, skippedRounds, uncompletedRounds: Math.max(0, state.plannedRounds - completed.length - skippedRounds), therapistRestarts: state.therapistRestarts, endedEarly: state.endedEarly, firstTryCorrect,
       incorrectAttempts: state.incorrectAttempts,
       firstTryPercentage: completed.length ? Math.round(firstTryCorrect / completed.length * 100) : 0,
       results: state.results.map((item) => ({ ...item })), recentWordIds: history.snapshot() };

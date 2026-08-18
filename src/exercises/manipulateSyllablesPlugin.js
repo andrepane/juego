@@ -116,6 +116,40 @@ export function createBalancedOperationSchedule(operations, total, random = Math
   return schedule;
 }
 
+export function planBalancedChallenges(pool, operations, total, random = Math.random) {
+  const unique = [...new Set(operations)];
+  const availableByOperation = Object.fromEntries(unique.map(operation => [operation, pool.filter(item => item.operation === operation).length]));
+  const base = unique.length ? Math.floor(total / unique.length) : 0;
+  const remainder = unique.length ? total % unique.length : 0;
+  const eligibleForExtra = unique.filter(operation => availableByOperation[operation] >= base + 1);
+  const missingBase = unique.filter(operation => availableByOperation[operation] < base);
+  if (!unique.length || missingBase.length || eligibleForExtra.length < remainder) {
+    const neededByOperation = Object.fromEntries(unique.map(operation => [operation, base + (eligibleForExtra.includes(operation) && eligibleForExtra.indexOf(operation) < remainder ? 1 : 0)]));
+    return { status: 'insufficient', availableByOperation, neededByOperation, challenges: [] };
+  }
+  const extras = [...eligibleForExtra];
+  for (let index = extras.length - 1; index > 0; index -= 1) { const target = Math.floor(random() * (index + 1)); [extras[index], extras[target]] = [extras[target], extras[index]]; }
+  const extraSet = new Set(extras.slice(0, remainder));
+  const neededByOperation = Object.fromEntries(unique.map(operation => [operation, base + (extraSet.has(operation) ? 1 : 0)]));
+  const scheduleSeed = unique.flatMap(operation => Array(neededByOperation[operation]).fill(operation));
+  const schedule = createBalancedOperationScheduleFromCounts(neededByOperation, random);
+  const selection = selectVariedChallenges(pool, schedule, random);
+  return { ...selection, schedule: scheduleSeed.length ? schedule : [], availableByOperation, neededByOperation };
+}
+
+function createBalancedOperationScheduleFromCounts(counts, random) {
+  const remaining = { ...counts }; const operations = Object.keys(counts); const schedule = [];
+  while (Object.values(remaining).some(Boolean)) {
+    const available = operations.filter(operation => remaining[operation] > 0);
+    const alternatives = available.filter(operation => operation !== schedule.at(-1));
+    const candidates = alternatives.length ? alternatives : available;
+    const highest = Math.max(...candidates.map(operation => remaining[operation]));
+    const operation = pick(candidates.filter(item => remaining[item] === highest), random);
+    schedule.push(operation); remaining[operation] -= 1;
+  }
+  return schedule;
+}
+
 export function selectVariedChallenges(pool, schedule, random = Math.random) {
   const selected = []; const identities = new Set(); const usage = new Map(); let previousWord = null;
   for (const operation of schedule) {
@@ -133,9 +167,9 @@ export function selectVariedChallenges(pool, schedule, random = Math.random) {
 
 const helperInstructions = {
   remove: 'Pulsa la sílaba que quieres quitar',
-  add: 'Selecciona la ficha nueva y colócala en un espacio',
+  add: 'Selecciona la ficha nueva y después el lugar donde quieres colocarla',
   replace: 'Selecciona la ficha nueva y después pulsa la sílaba que quieres cambiar',
-  invert: 'Pulsa dos fichas para intercambiar sus posiciones'
+  invert: 'Intercambia las fichas necesarias para obtener el nuevo orden'
 };
 
 export function createManipulateSyllablesPlugin({ random = Math.random, getWords = getFilteredWords } = {}) {
@@ -184,8 +218,7 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
     const total = config.rounds;
     const selectedOperations = [...new Set(operations)].filter((item) => MANIPULATION_OPERATIONS[item]);
     const pool = legacy ? buildChallengePool({ level: options.level, operations: selectedOperations, getWords }) : buildChallengePool({ config, operations: selectedOperations, getWords });
-    const schedule = createBalancedOperationSchedule(selectedOperations, total, random);
-    const selection = selectVariedChallenges(pool, schedule, random);
+    const selection = planBalancedChallenges(pool, selectedOperations, total, random);
     if (!selectedOperations.length || selection.status === 'insufficient') return { status: 'insufficient', available: pool.length, requested: total };
     Object.assign(state, { challenges: selection.challenges, index: 0, completed: false, firstTry: true, incorrectAttempts: 0, results: [], plannedRounds: total, therapistRestarts: 0, endedEarly: false });
     state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 };
@@ -272,7 +305,7 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
         undoUses: results.reduce((sum, item) => sum + item.undoUses, 0), resetUses: results.reduce((sum, item) => sum + item.resetUses, 0) }];
     }));
     const skippedRounds = state.results.length - completed.length;
-    return { roundsPlayed: completed.length, plannedRounds: state.plannedRounds, completedRounds: completed.length, correctRounds: completed.length, skippedRounds, therapistRestarts: state.therapistRestarts, endedEarly: state.endedEarly, firstTryCorrect, incorrectAttempts: state.incorrectAttempts,
+    return { roundsPlayed: completed.length, plannedRounds: state.plannedRounds, completedRounds: completed.length, correctRounds: completed.length, skippedRounds, uncompletedRounds: Math.max(0, state.plannedRounds - completed.length - skippedRounds), therapistRestarts: state.therapistRestarts, endedEarly: state.endedEarly, firstTryCorrect, incorrectAttempts: state.incorrectAttempts,
       firstTryPercentage: completed.length ? Math.round(firstTryCorrect / completed.length * 100) : 0,
       totalMovements: state.results.reduce((sum, item) => sum + item.movements, 0), totalUndoUses: state.results.reduce((sum, item) => sum + item.undoUses, 0),
       totalResetUses: state.results.reduce((sum, item) => sum + item.resetUses, 0),
