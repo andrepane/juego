@@ -14,18 +14,18 @@ const base = (activityId, rounds, syllableCounts, complexities, frequencies, act
 
 export const SESSION_PRESETS = Object.freeze({
   'order-syllables': {
-    initial: base('order-syllables', 5, [2], ['simple'], [1]),
-    intermediate: base('order-syllables', 10, [2, 3], ['simple', 'mixed'], [1, 2]),
-    advanced: base('order-syllables', 10, [3, 4], ['mixed', 'trabadas'], [2, 3])
+    initial: base('order-syllables', 5, [2], ['simple'], [1], { variants: ['order', 'missing', 'intruder'], distractorCount: 2, targetPositions: ['initial', 'final'], memorySeconds: 5 }),
+    intermediate: base('order-syllables', 10, [2, 3], ['simple', 'mixed'], [1, 2], { variants: ['order', 'missing', 'intruder', 'correctOrder', 'memory'], distractorCount: 3, targetPositions: ['initial', 'medial', 'final'], memorySeconds: 5 }),
+    advanced: base('order-syllables', 10, [3, 4], ['mixed', 'trabadas'], [2, 3], { variants: ['order', 'missing', 'intruder', 'correctOrder', 'memory'], distractorCount: 4, targetPositions: ['initial', 'medial', 'final'], memorySeconds: 2 })
   },
   'manipulate-syllables': {
-    initial: base('manipulate-syllables', 5, [2], ['simple'], [1], { operations: ['remove', 'add'] }, ['initial', 'final']),
-    intermediate: base('manipulate-syllables', 10, [2, 3], ['simple', 'mixed'], [1, 2], { operations: ['remove', 'add', 'replace'] }, ['initial', 'medial', 'final']),
-    advanced: base('manipulate-syllables', 10, [3, 4], ['mixed', 'trabadas'], [2, 3], { operations: ['remove', 'add', 'replace', 'invert'] }, ['initial', 'medial', 'final'])
+    initial: base('manipulate-syllables', 5, [2], ['simple'], [1], { operations: ['remove', 'add'], variants: ['instruction', 'target', 'identify'], operationVisible: true, chainSteps: 2 }, ['initial', 'final']),
+    intermediate: base('manipulate-syllables', 10, [2, 3], ['simple', 'mixed'], [1, 2], { operations: ['remove', 'add', 'replace'], variants: ['instruction', 'target', 'identify', 'error', 'chain'], operationVisible: true, chainSteps: 2 }, ['initial', 'medial', 'final']),
+    advanced: base('manipulate-syllables', 10, [3, 4], ['mixed', 'trabadas'], [2, 3], { operations: ['remove', 'add', 'replace', 'invert'], variants: ['instruction', 'target', 'identify', 'error', 'chain'], operationVisible: false, chainSteps: 2 }, ['initial', 'medial', 'final'])
   }
 });
 
-const allowed = { complexities: ['simple', 'mixed', 'trabadas'], frequencies: [1, 2, 3], targetPositions: ['initial', 'medial', 'final'], operations: ['remove', 'add', 'replace', 'invert'] };
+const allowed = { complexities: ['simple', 'mixed', 'trabadas'], frequencies: [1, 2, 3], targetPositions: ['initial', 'medial', 'final'], operations: ['remove', 'add', 'replace', 'invert'], orderVariants: ['order', 'missing', 'intruder', 'correctOrder', 'memory'], manipVariants: ['instruction', 'target', 'identify', 'error', 'chain'] };
 const uniqueSorted = (values, order) => [...new Set(Array.isArray(values) ? values : [])].filter(value => order.includes(value)).sort((a, b) => order.indexOf(a) - order.indexOf(b));
 const clone = value => structuredClone(value);
 
@@ -43,6 +43,8 @@ export function normalizeSessionConfig(rawConfig = {}) {
   const fallback = ACTIVITY_IDS.includes(activityId) ? createDefaultSessionConfig(activityId) : base(activityId, 5, [], [], []);
   const linguistic = rawConfig.linguistic ?? {};
   const operations = uniqueSorted(rawConfig.activityOptions?.operations ?? fallback.activityOptions.operations ?? [], allowed.operations);
+  const variantOrder = activityId === 'order-syllables' ? allowed.orderVariants : allowed.manipVariants;
+  const variants = uniqueSorted(rawConfig.activityOptions?.variants ?? fallback.activityOptions.variants ?? [], variantOrder);
   return {
     activityId,
     mode: SESSION_MODES[rawConfig.mode] ? rawConfig.mode : rawConfig.mode ?? DEFAULT_SESSION_MODE,
@@ -55,7 +57,9 @@ export function normalizeSessionConfig(rawConfig = {}) {
       frequencies: uniqueSorted((linguistic.frequencies ?? fallback.linguistic.frequencies).map(Number), allowed.frequencies),
       targetPositions: activityId === 'manipulate-syllables' ? uniqueSorted(linguistic.targetPositions ?? fallback.linguistic.targetPositions, allowed.targetPositions) : []
     },
-    activityOptions: activityId === 'manipulate-syllables' ? { operations } : {}
+    activityOptions: activityId === 'manipulate-syllables'
+      ? { operations, variants, operationVisible: rawConfig.activityOptions?.operationVisible ?? fallback.activityOptions.operationVisible ?? true, chainSteps: 2 }
+      : { variants, distractorCount: [2, 3, 4].includes(Number(rawConfig.activityOptions?.distractorCount)) ? Number(rawConfig.activityOptions.distractorCount) : fallback.activityOptions.distractorCount, targetPositions: uniqueSorted(rawConfig.activityOptions?.targetPositions ?? fallback.activityOptions.targetPositions, allowed.targetPositions), memorySeconds: [2, 3, 5].includes(Number(rawConfig.activityOptions?.memorySeconds)) ? Number(rawConfig.activityOptions.memorySeconds) : fallback.activityOptions.memorySeconds }
   };
 }
 
@@ -69,6 +73,7 @@ export function validateSessionConfig(config) {
     if (!config.linguistic.targetPositions?.length) errors.push('Selecciona al menos una posición objetivo.');
     if (!config.activityOptions?.operations?.length) errors.push('Selecciona al menos una operación.');
   }
+  if (!config?.activityOptions?.variants?.length) errors.push('Selecciona al menos un tipo de reto.');
   return { valid: errors.length === 0, errors };
 }
 

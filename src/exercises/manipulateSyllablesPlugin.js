@@ -1,6 +1,20 @@
 import { getFilteredWords, normalizeSpanish } from '../core/wordUtils.js';
 import { MANIPULATION_OPERATIONS, SAFE_SYLLABLES, resolveManipulationLevel } from './manipulateSyllablesConfig.js';
 import { migrateLegacyLevelConfig, normalizeSessionConfig } from '../core/sessionConfig.js';
+import { planBalancedVariants } from '../core/challengePlanner.js';
+
+export const MANIPULATION_VARIANTS = Object.freeze({ instruction: 'Ejecutar la consigna', target: 'Alcanzar un resultado', identify: 'Identificar la operación', error: 'Detectar y corregir el error', chain: 'Transformación encadenada' });
+
+export function buildManipulationVariantPool(pool, variants, { operationVisible = true } = {}) {
+  return pool.flatMap(challenge => variants.map(challengeVariant => ({ ...copy(challenge), id: `${challenge.id}|${challengeVariant}`, challengeVariant,
+    variantLabel: MANIPULATION_VARIANTS[challengeVariant], operationVisible,
+    instruction: challengeVariant === 'target' ? `Alcanza el resultado ${challenge.expectedText.toLocaleUpperCase('es')}.${operationVisible ? ` Operación: ${MANIPULATION_OPERATIONS[challenge.operation].label}.` : ''}`
+      : challengeVariant === 'identify' ? `Observa el cambio hasta ${challenge.expectedText.toLocaleUpperCase('es')} e identifica la operación.`
+        : challengeVariant === 'error' ? `Corrige la transformación para obtener ${challenge.expectedText.toLocaleUpperCase('es')}.`
+          : challengeVariant === 'chain' ? `Paso 1 de 2: ${challenge.instruction}` : challenge.instruction,
+    steps: challengeVariant === 'chain' ? [{ index: 1, operation: challenge.operation, expected: challenge.expectedText, status: 'active', errors: 0, helpUses: 0, movements: 0 }, { index: 2, operation: challenge.operation, expected: challenge.expectedText, status: 'pending', errors: 0, helpUses: 0, movements: 0 }] : []
+  })));
+}
 
 const POSITION_NAMES = ['primera', 'segunda', 'tercera', 'cuarta', 'quinta'];
 const copy = (value) => structuredClone(value);
@@ -172,10 +186,10 @@ const helperInstructions = {
   invert: 'Intercambia las fichas necesarias para obtener el nuevo orden'
 };
 
-export function createManipulateSyllablesPlugin({ random = Math.random, getWords = getFilteredWords } = {}) {
+export function createManipulateSyllablesPlugin({ random = Math.random, getWords = getFilteredWords, clock = () => Date.now() } = {}) {
   const state = { challenges: [], index: 0, currentPieces: [], history: [], selectedPieceId: null, completed: false,
     firstTry: true, incorrectAttempts: 0, results: [], lastValidatedFingerprint: null, announcement: '', validationState: 'unvalidated',
-    roundMetrics: { movements: 0, undoUses: 0, resetUses: 0 }, plannedRounds: 0, therapistRestarts: 0, endedEarly: false };
+    roundMetrics: { movements: 0, undoUses: 0, resetUses: 0 }, plannedRounds: 0, therapistRestarts: 0, endedEarly: false, startedAt: 0 };
   const current = () => state.challenges[state.index];
   const fingerprint = () => state.currentPieces.map(({ id }) => id).join('|');
   const originalFingerprint = () => current().originalPieces.map(({ id }) => id).join('|');
@@ -190,6 +204,7 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
   function snapshot(status = 'ready') {
     const round = current();
     return round ? { status, round: state.index + 1, total: state.challenges.length, operation: round.operation,
+      variant: round.challengeVariant ?? 'instruction', variantLabel: round.variantLabel ?? MANIPULATION_VARIANTS.instruction, steps: copy(round.steps ?? []), activeStep: 1,
       baseWord: round.baseWord, original: [...round.original], originalPieces: copy(round.originalPieces), instruction: round.instruction,
       helperInstruction: helperInstructions[round.operation], currentPieces: copy(state.currentPieces), extraPiece: copy(round.extraPiece),
       extraAvailable: Boolean(round.extraPiece && !extraIsPlaced()), selectedPieceId: state.selectedPieceId, historyLength: state.history.length, isModified: fingerprint() !== originalFingerprint(),
@@ -217,12 +232,18 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
     const operations = config.activityOptions.operations;
     const total = config.rounds;
     const selectedOperations = [...new Set(operations)].filter((item) => MANIPULATION_OPERATIONS[item]);
-    const pool = legacy ? buildChallengePool({ level: options.level, operations: selectedOperations, getWords }) : buildChallengePool({ config, operations: selectedOperations, getWords });
-    const selection = planBalancedChallenges(pool, selectedOperations, total, random);
+    const basePool = legacy ? buildChallengePool({ level: options.level, operations: selectedOperations, getWords }) : buildChallengePool({ config, operations: selectedOperations, getWords });
+    const variants = legacy ? ['instruction'] : config.activityOptions.variants;
+    const pool = buildManipulationVariantPool(basePool, variants, config.activityOptions);
+    const variantPlan = planBalancedVariants(pool.map(item => ({ ...item, variant: item.challengeVariant })), variants, total, random);
+    const operationPlan = planBalancedChallenges(basePool, selectedOperations, total, random);
+    const selection = variantPlan.status === 'ready' && operationPlan.status === 'ready'
+      ? { status: 'ready', challenges: operationPlan.challenges.map((item, index) => buildManipulationVariantPool([item], [variantPlan.schedule[index]], config.activityOptions)[0]) }
+      : { status: 'insufficient' };
     if (!selectedOperations.length || selection.status === 'insufficient') return { status: 'insufficient', available: pool.length, requested: total };
     Object.assign(state, { challenges: selection.challenges, index: 0, completed: false, firstTry: true, incorrectAttempts: 0, results: [], plannedRounds: total, therapistRestarts: 0, endedEarly: false });
     state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 };
-    restoreRound(); return snapshot();
+    restoreRound(); state.startedAt = clock(); return snapshot();
   }
   function submit({ type, pieceId, slotIndex } = {}) {
     const round = current(); if (!round) return { status: 'empty' };
@@ -276,20 +297,20 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
       piece.id === round.expectedPieces[index].id && sameText(piece.text, round.expectedPieces[index].text));
     if (!correct) { state.incorrectAttempts += 1; state.firstTry = false; state.validationState = 'incorrect'; state.announcement = ''; return snapshot('incorrect'); }
     state.completed = true; state.validationState = 'correct'; state.announcement = '';
-    state.results.push({ operation: round.operation, baseWord: round.baseWord, instruction: round.instruction, result: round.expectedText, expected: round.expectedText,
+    state.results.push({ variant: round.challengeVariant ?? 'instruction', operation: round.operation, baseWord: round.baseWord, instruction: round.instruction, result: round.expectedText, expected: round.expectedText,
       firstTry: state.firstTry, incorrectAttempts: state.incorrectAttempts - state.results.reduce((sum, item) => sum + item.incorrectAttempts, 0),
-      targetContext: snapshot().targetContext, ...copy(state.roundMetrics) });
+      targetContext: snapshot().targetContext, durationMs: Math.max(0, clock() - state.startedAt), stepResults: (round.steps ?? []).map((step, index) => ({ ...step, status: 'correct', movements: index === 0 ? state.roundMetrics.movements : 0 })), ...copy(state.roundMetrics) });
     return snapshot('correct');
   }
   function next() {
     if (!state.completed) return snapshot('locked');
     if (state.index >= state.challenges.length - 1) return { status: 'complete' };
-    state.index += 1; state.completed = false; state.firstTry = true; state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 }; restoreRound(); return snapshot();
+    state.index += 1; state.completed = false; state.firstTry = true; state.roundMetrics = { movements: 0, undoUses: 0, resetUses: 0 }; restoreRound(); state.startedAt = clock(); return snapshot();
   }
   function restartRound() { if (!current() || state.completed) return snapshot('locked'); state.therapistRestarts += 1; restoreRound(); return snapshot('ready'); }
   function skipRound() {
     const round = current(); if (!round || state.completed) return snapshot('locked');
-    state.results.push({ operation: round.operation, baseWord: round.baseWord, instruction: round.instruction, status: 'skipped', firstTry: false, incorrectAttempts: 0, targetContext: classifyTargetContext(round.operation, round.position, round.original.length, round.variant), ...copy(state.roundMetrics) });
+    state.results.push({ variant: round.challengeVariant ?? 'instruction', operation: round.operation, baseWord: round.baseWord, instruction: round.instruction, status: 'skipped', firstTry: false, incorrectAttempts: 0, targetContext: classifyTargetContext(round.operation, round.position, round.original.length, round.variant), ...copy(state.roundMetrics) });
     state.completed = true; return snapshot('skipped');
   }
   function finishSession() { state.endedEarly = true; return getSessionState(); }
@@ -309,7 +330,7 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
       firstTryPercentage: completed.length ? Math.round(firstTryCorrect / completed.length * 100) : 0,
       totalMovements: state.results.reduce((sum, item) => sum + item.movements, 0), totalUndoUses: state.results.reduce((sum, item) => sum + item.undoUses, 0),
       totalResetUses: state.results.reduce((sum, item) => sum + item.resetUses, 0),
-      byOperation, results: copy(state.results) };
+      byOperation, byVariant: Object.fromEntries(Object.keys(MANIPULATION_VARIANTS).map(variant => { const rows = state.results.filter(item => item.variant === variant); return [variant, { rounds: rows.length, firstTryCorrect: rows.filter(item => item.firstTry).length, incorrectAttempts: rows.reduce((sum, item) => sum + item.incorrectAttempts, 0) }]; })), results: copy(state.results) };
   }
   return { id: 'manipulate-syllables', start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState };
 }

@@ -20,6 +20,7 @@
 .advanced-panel { display: grid; gap: 1rem; }
 .professional-bar { margin: 1rem 0; padding: .75rem; display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; border: 2px solid #34566f; border-radius: .8rem; background: #e8f0f5; }
 .professional-bar strong { margin-right: auto; color: #29485e; }
+.answer-piece{border:2px solid transparent;cursor:grab;animation:tile-in .16s ease-out}.answer-piece.selected{outline:4px solid #f2b84b;outline-offset:2px}.piece[draggable="true"]{touch-action:manipulation}.answer{min-height:128px;overflow-x:auto;overscroll-behavior-inline:contain}.play-card{max-width:880px}.feedback.success{animation:calm-success .35s ease-out}@keyframes tile-in{from{transform:translateY(5px);opacity:.7}}@keyframes calm-success{50%{background:#e6f5ed;border-radius:10px}}@media(max-width:520px){.answer{justify-content:flex-start;flex-wrap:nowrap}.answer-piece{flex:0 0 auto}}
 .danger { color: #8b1e18; border-color: #b42318; }
 @media (max-width: 560px) { .professional-bar { align-items: stretch; flex-direction: column; } .professional-bar strong { margin: 0; } }
 
