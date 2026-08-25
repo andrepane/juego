@@ -51,9 +51,37 @@ npm test
 
 `npm test` ejecuta conjuntamente las suites independientes de Ordenar sílabas y Manipular sílabas mediante el ejecutor nativo de Node.
 
+## Arquitectura extensible de actividades
+
+LEXIA separa cuatro conceptos que antes estaban reunidos en `main.js`:
+
+- La **definición** contiene únicamente identidad, texto del catálogo, estado, orden y capacidades.
+- El **plugin** es el motor de sesión: crea retos, aplica acciones, conserva las reglas lingüísticas y calcula métricas. No conoce el DOM.
+- El **controlador** representa una actividad y traduce pulsaciones, teclado y arrastre en acciones del plugin. Los dos controladores implementan el mismo contrato: `activityId`, `mount`, `openConfiguration`, `startSession`, `renderRound`, `finishSession`, `renderSummary` y `destroy`.
+- El **runtime** resuelve una composición completa mediante `activityId`, mantiene un único controlador activo y garantiza su limpieza al cambiar de actividad o volver a portada.
+
+`src/app/activityComposition.js` es la única tabla de composición. Cada entrada reúne definición, fábrica de plugin, fábrica de controlador y fábrica de configurador. Una actividad `available` se rechaza si falta cualquiera de esas piezas; una `coming-soon` puede no tener motor ni controlador porque el catálogo no permite abrirla. No hay mapas paralelos ni condiciones por identificador en `main.js`.
+
+La shell común proporciona navegación entre pantallas, foco en el título, progreso accesible, controles profesionales, confirmaciones de salida y finalización, y métricas comunes. Los templates de configuración, juego y resumen específicos viven junto a cada controlador y se montan bajo una raíz propia. `index.html` conserva solo portada y diálogos compartidos: es una decisión deliberada para seguir siendo un sitio estático sencillo sin acumular una pantalla completa por cada actividad futura.
+
+Continúan siendo específicos el aspecto de las fichas, las acciones aceptadas, el feedback pedagógico y las secciones particulares del resumen. Las reglas lingüísticas y métricas detalladas continúan en sus plugins; el configurador dimensional sigue siendo compartido.
+
+### Añadir una actividad en el futuro
+
+1. Añadir su definición canónica a `activityDefinitions.js` (usar `coming-soon` mientras no esté completa).
+2. Crear un plugin que implemente el contrato del registro sin acceder al DOM.
+3. Crear un controlador con el contrato común, un template encapsulado y listeners abortables o equivalentes.
+4. Reutilizar la shell de sesión y dejar en el controlador solo la representación y traducción de interacciones específicas.
+5. Añadir exactamente una entrada a `activityComposition.js` y sus pruebas de composición, motor y controlador.
+6. Marcarla `available` únicamente cuando definición, plugin, controlador, configurador y destino navegable sean válidos.
+
 ## Organización
 
-- `main.js`: composición del registro, navegación y presentación de las dos sesiones.
+- `main.js`: crea el registro y el runtime, inicializa la portada y enlaza el catálogo; no controla rondas.
+- `src/app/activityRuntime.js`: contrato, validación, resolución y ciclo de vida del controlador activo.
+- `src/app/activityComposition.js`: composición única `activityId → definición/plugin/controlador/configurador`.
+- `src/ui/activities/`: templates y controladores visuales aislados de las dos actividades.
+- `src/ui/session/`: shell, progreso, controles profesionales y resumen comunes.
 - `src/exercises/activityDefinitions.js`: fuente central de metadatos e identificadores de las actividades soportadas.
 - `src/exercises/orderSyllablesPlugin.js`, `orderSyllablesVariants.js` y `orderSyllablesConfig.js`: sesión, registro de variantes y reglas de Ordenar sílabas.
 - `src/exercises/manipulateSyllablesPlugin.js` y `manipulateSyllablesConfig.js`: motor, métricas, niveles e inventario seguro exclusivos de Manipular sílabas.
@@ -92,7 +120,7 @@ Las definiciones canónicas viven en `src/exercises/activityDefinitions.js`. La 
 
 La portada se genera automáticamente desde `registry.listByArea()`: no necesita añadir HTML ni condiciones por tarjeta. Una actividad `available` abre su configurador, una `coming-soon` se presenta desactivada y una `hidden` no se renderiza. Para incorporar una futura actividad será necesario añadir su definición, devolverla desde su plugin y registrar la factoría en la composición de la aplicación.
 
-Temporalmente, `main.js` conserva el mapa entre los identificadores disponibles y las dos pantallas de configuración existentes, y tanto los configuradores como la presentación y ejecución de cada sesión mantienen lógica específica. Esta fase centraliza el descubrimiento y la entrada al catálogo, pero no intenta convertir todavía toda la sesión en una interfaz genérica.
+La composición de la aplicación valida el destino navegable antes de registrar una actividad disponible. Por eso la portada solo ofrece motores que pueden resolverse y montarse completamente.
 
 La disponibilidad se calcula sobre palabras jugables y retos concretos antes de comenzar. En Manipular, las posiciones filtran el banco de retos: `edges` requiere ambos extremos y `full` sigue siendo una inversión completa independiente de inicial/medial/final.
 
