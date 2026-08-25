@@ -11,6 +11,11 @@ export const ACTIVITY_DEFINITIONS = Object.freeze({
     areaId: 'syllabic-awareness', areaTitle: 'Conciencia silábica', areaDescription: 'Actividades para reconocer, ordenar y transformar las sílabas de las palabras.',
     icon: 'CA ↔ SA', status: 'available', sortOrder: 20, capabilities: CAPABILITIES
   }),
+  'order-letters': Object.freeze({
+    id: 'order-letters', title: 'Ordenar letras', shortDescription: 'Reconstruye palabras, completa huecos y detecta letras intrusas.',
+    areaId: 'phonological-awareness', areaTitle: 'Conciencia fonológica', areaDescription: 'Actividades para reconocer y comparar los sonidos de las palabras.',
+    icon: 'L · E · T · R · A', status: 'available', sortOrder: 25, capabilities: CAPABILITIES
+  }),
   'identify-rhymes': Object.freeze({
     id: 'identify-rhymes', title: 'Identificar rimas', shortDescription: 'Encuentra palabras que terminan con sonidos parecidos.',
     areaId: 'phonological-awareness', areaTitle: 'Conciencia fonológica', areaDescription: 'Actividades para reconocer y comparar los sonidos de las palabras.',
@@ -24,4 +29,5 @@ export const ACTIVITY_DEFINITIONS = Object.freeze({
 });
 
 export const ACTIVITY_IDS = Object.freeze(Object.keys(ACTIVITY_DEFINITIONS));
+export const AVAILABLE_ACTIVITY_IDS = Object.freeze(ACTIVITY_IDS.filter(id => ACTIVITY_DEFINITIONS[id].status === 'available'));
 export const getActivityDefinition = id => ACTIVITY_DEFINITIONS[id] ?? null;

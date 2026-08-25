@@ -44,10 +44,10 @@ test('listByArea agrupa áreas y conserva el orden de sus actividades', () => {
   assert.deepEqual(registry.listByArea().map(area => [area.id, area.activities.map(item => item.id)]), [['area', ['a1', 'a2']], ['second', ['b']]]);
 });
 
-test('las dos actividades actuales comparten la fuente central y se registran', () => {
+test('las actividades actuales comparten la fuente central y se registran', () => {
   const registry = createExerciseRegistry();
   ACTIVITY_IDS.forEach(id => registry.register(ACTIVITY_DEFINITIONS[id]));
-  assert.deepEqual(registry.list().map(item => item.id), ['order-syllables', 'manipulate-syllables', 'identify-rhymes']);
+  assert.deepEqual(registry.list().map(item => item.id), ['order-syllables', 'manipulate-syllables', 'order-letters', 'identify-rhymes']);
   assert.equal(registry.get('legacy-phonemes').status, 'hidden');
-  assert.ok(['order-syllables', 'manipulate-syllables'].every(id => registry.get(id).capabilities.supportsMetrics));
+  assert.ok(['order-syllables', 'manipulate-syllables', 'order-letters'].every(id => registry.get(id).capabilities.supportsMetrics));
 });
