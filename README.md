@@ -53,10 +53,12 @@ npm test
 
 ## Organización
 
-- `main.js`: registro, navegación y presentación de las dos sesiones.
+- `main.js`: composición del registro, navegación y presentación de las dos sesiones.
+- `src/exercises/activityDefinitions.js`: fuente central de metadatos e identificadores de las actividades soportadas.
 - `src/exercises/orderSyllablesPlugin.js`, `orderSyllablesVariants.js` y `orderSyllablesConfig.js`: sesión, registro de variantes y reglas de Ordenar sílabas.
 - `src/exercises/manipulateSyllablesPlugin.js` y `manipulateSyllablesConfig.js`: motor, métricas, niveles e inventario seguro exclusivos de Manipular sílabas.
 - `src/core/exerciseRegistry.js`: contrato y registro común de plugins.
+- `src/ui/activityCatalog.js`: agrupación por áreas, tarjetas y selección delegada del catálogo.
 - `src/core/challengePlanner.js`: planificación equilibrada reutilizable por variante.
 - `src/core/wordUtils.js`: acceso y filtros compartidos del corpus.
 - `src/data/words/`: banco curado por categorías y muestra procesada del corpus general.
@@ -73,6 +75,24 @@ Ambas actividades consumen el modelo serializable de `src/core/sessionConfig.js`
 Los antiguos niveles 1, 2 y 3 se adaptan, respectivamente, a Inicial, Intermedio y Avanzado mediante `migrateLegacyLevelConfig`; no existe un segundo motor dimensional. La frecuencia del corpus se presenta como 1 Muy frecuente, 2 Frecuente y 3 Menos frecuente.
 
 Los modos `therapist`, `supervised` (predeterminado) y `autonomous` se describen mediante políticas comunes. Los plugins mantienen `start`, `submit`, `next` y `getMetrics`, y pueden ofrecer `restartRound`, `skipRound`, `finishSession` y `getSessionState`. El registro valida esos métodos opcionales cuando están presentes. Las métricas comunes distinguen rondas completadas, omitidas y no realizadas, además de reinicios profesionales y finalización anticipada.
+
+## Plugins de actividad y catálogo
+
+Un plugin de actividad es el objeto que reúne la identidad pública de una actividad y su contrato de ejecución. Sus metadatos obligatorios son:
+
+- `id`, `title` y `shortDescription`;
+- `areaId` y `areaTitle` (puede aportar también `areaDescription` para el encabezado del catálogo);
+- `icon`, una representación textual sencilla y accesible como decoración;
+- `status`, con uno de los valores `available`, `coming-soon` o `hidden`;
+- `sortOrder`, un número que determina el orden de las tarjetas;
+- `capabilities`, con los booleanos `supportsImages`, `supportsAudio`, `supportsText` y `supportsMetrics`;
+- los métodos `start`, `submit`, `next` y `getMetrics`, además de los métodos opcionales de sesión ya descritos.
+
+Las definiciones canónicas viven en `src/exercises/activityDefinitions.js`. La factoría del motor incorpora su definición al objeto que devuelve y `main.js` registra ese objeto mediante `registry.register(...)`. El registro rechaza metadatos incompletos, métodos inválidos e identificadores duplicados. `list()` permite descubrir las actividades visibles y filtrar por estado; `listByArea()` las devuelve agrupadas por área. Ambos métodos excluyen las actividades `hidden` y ordenan por `sortOrder`.
+
+La portada se genera automáticamente desde `registry.listByArea()`: no necesita añadir HTML ni condiciones por tarjeta. Una actividad `available` abre su configurador, una `coming-soon` se presenta desactivada y una `hidden` no se renderiza. Para incorporar una futura actividad será necesario añadir su definición, devolverla desde su plugin y registrar la factoría en la composición de la aplicación.
+
+Temporalmente, `main.js` conserva el mapa entre los identificadores disponibles y las dos pantallas de configuración existentes, y tanto los configuradores como la presentación y ejecución de cada sesión mantienen lógica específica. Esta fase centraliza el descubrimiento y la entrada al catálogo, pero no intenta convertir todavía toda la sesión en una interfaz genérica.
 
 La disponibilidad se calcula sobre palabras jugables y retos concretos antes de comenzar. En Manipular, las posiciones filtran el banco de retos: `edges` requiere ambos extremos y `full` sigue siendo una inversión completa independiente de inicial/medial/final.
 

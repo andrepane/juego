@@ -1,4 +1,5 @@
-export const ACTIVITY_IDS = ['order-syllables', 'manipulate-syllables'];
+export { ACTIVITY_IDS } from '../exercises/activityDefinitions.js';
+import { ACTIVITY_IDS } from '../exercises/activityDefinitions.js';
 export const DEFAULT_SESSION_MODE = 'supervised';
 
 export const SESSION_MODES = Object.freeze({

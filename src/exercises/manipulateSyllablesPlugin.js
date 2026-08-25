@@ -2,6 +2,7 @@ import { getFilteredWords, normalizeSpanish } from '../core/wordUtils.js';
 import { MANIPULATION_OPERATIONS, SAFE_SYLLABLES, resolveManipulationLevel } from './manipulateSyllablesConfig.js';
 import { migrateLegacyLevelConfig, normalizeSessionConfig } from '../core/sessionConfig.js';
 import { planBalancedVariants } from '../core/challengePlanner.js';
+import { getActivityDefinition } from './activityDefinitions.js';
 
 export const MANIPULATION_VARIANTS = Object.freeze({ instruction: 'Ejecutar la consigna', target: 'Alcanzar un resultado', identify: 'Identificar la operación', error: 'Detectar y corregir el error', chain: 'Transformación encadenada' });
 
@@ -332,5 +333,5 @@ export function createManipulateSyllablesPlugin({ random = Math.random, getWords
       totalResetUses: state.results.reduce((sum, item) => sum + item.resetUses, 0),
       byOperation, byVariant: Object.fromEntries(Object.keys(MANIPULATION_VARIANTS).map(variant => { const rows = state.results.filter(item => item.variant === variant); return [variant, { rounds: rows.length, firstTryCorrect: rows.filter(item => item.firstTry).length, incorrectAttempts: rows.reduce((sum, item) => sum + item.incorrectAttempts, 0) }]; })), results: copy(state.results) };
   }
-  return { id: 'manipulate-syllables', start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState };
+  return { ...getActivityDefinition('manipulate-syllables'), start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState };
 }
