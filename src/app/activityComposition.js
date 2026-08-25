@@ -5,10 +5,13 @@ import { createManipulateSyllablesPlugin } from '../exercises/manipulateSyllable
 import { createSessionConfigurator } from '../ui/sessionConfigurator.js';
 import { createOrderSyllablesController } from '../ui/activities/orderSyllablesController.js';
 import { createManipulateSyllablesController } from '../ui/activities/manipulateSyllablesController.js';
+import { createOrderLettersPlugin } from '../exercises/orderLettersPlugin.js';
+import { createOrderLettersController } from '../ui/activities/orderLettersController.js';
 
 export const activityComposition = createActivityComposition([
   { definition: ACTIVITY_DEFINITIONS['order-syllables'], createPlugin: createOrderSyllablesPlugin, createController: createOrderSyllablesController, createConfigurator: createSessionConfigurator },
   { definition: ACTIVITY_DEFINITIONS['manipulate-syllables'], createPlugin: createManipulateSyllablesPlugin, createController: createManipulateSyllablesController, createConfigurator: createSessionConfigurator },
+  { definition: ACTIVITY_DEFINITIONS['order-letters'], createPlugin: createOrderLettersPlugin, createController: createOrderLettersController, createConfigurator: createSessionConfigurator },
   { definition: ACTIVITY_DEFINITIONS['identify-rhymes'] },
   { definition: ACTIVITY_DEFINITIONS['legacy-phonemes'] }
 ]);

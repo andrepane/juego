@@ -66,9 +66,9 @@ test('el runtime inicializa, limpia y no duplica listeners al remontar', () => {
   assert.equal(counters.home, true);
 });
 
-test('las dos composiciones actuales incluyen definición, plugin, controlador y configurador', () => {
+test('las actividades disponibles incluyen definición, plugin, controlador y configurador', () => {
   const executable = activityComposition.list().filter(item => item.definition.status === 'available');
-  assert.deepEqual(executable.map(item => item.definition.id).sort(), ['manipulate-syllables', 'order-syllables']);
+  assert.deepEqual(executable.map(item => item.definition.id).sort(), ['manipulate-syllables', 'order-letters', 'order-syllables']);
   for (const entry of executable) {
     assert.equal(activityComposition.resolveAvailable(entry.definition.id), entry);
     assert.equal(typeof entry.createPlugin, 'function');

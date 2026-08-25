@@ -3,12 +3,21 @@ import { isOrderableWord } from '../exercises/orderSyllablesPlugin.js';
 import { buildOrderChallengePool } from '../exercises/orderSyllablesVariants.js';
 import { planBalancedVariants } from './challengePlanner.js';
 import { buildChallengePool, buildManipulationVariantPool, planBalancedChallenges } from '../exercises/manipulateSyllablesPlugin.js';
+import { buildOrderLettersChallengePool } from '../exercises/orderLettersPlugin.js';
+import { getOrthographicLength } from './wordUtils.js';
 
 export function compatibleWords(config, words = getAllWords()) {
   return words.filter(word => wordMatchesLinguistic(word, config.linguistic));
 }
 export function calculateAvailability(config, words = getAllWords()) {
   const candidates = compatibleWords(config, words);
+  if (config.activityId === 'order-letters') {
+    const band=n=>n<=4?'3-4':n<=6?'5-6':n<=8?'7-8':'9+';
+    const playable=candidates.filter(word=>config.activityOptions.letterLengths.includes(band(getOrthographicLength(word))));
+    const challenges=buildOrderLettersChallengePool(playable,config.activityOptions,()=>0.37);
+    const plan=planBalancedVariants(challenges,config.activityOptions.variants,config.rounds,()=>0.37);
+    return availabilityResult(config,new Set(challenges.map(x=>x.baseWord)).size,challenges.length,{}, {},plan.status==='ready',plan.availableByVariant,plan.neededByVariant);
+  }
   if (config.activityId === 'order-syllables') {
     const playable = candidates.filter(isOrderableWord); const challenges = buildOrderChallengePool(playable, config.activityOptions, () => 0.37);
     const plan = planBalancedVariants(challenges, config.activityOptions.variants, config.rounds, () => 0.37);

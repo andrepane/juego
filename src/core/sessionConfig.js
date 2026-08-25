@@ -1,5 +1,5 @@
 export { ACTIVITY_IDS } from '../exercises/activityDefinitions.js';
-import { ACTIVITY_IDS } from '../exercises/activityDefinitions.js';
+import { ACTIVITY_IDS, AVAILABLE_ACTIVITY_IDS } from '../exercises/activityDefinitions.js';
 export const DEFAULT_SESSION_MODE = 'supervised';
 
 export const SESSION_MODES = Object.freeze({
@@ -23,10 +23,15 @@ export const SESSION_PRESETS = Object.freeze({
     initial: base('manipulate-syllables', 5, [2], ['simple'], [1], { operations: ['remove', 'add'], variants: ['instruction', 'target', 'identify'], operationVisible: true, chainSteps: 2 }, ['initial', 'final']),
     intermediate: base('manipulate-syllables', 10, [2, 3], ['simple', 'mixed'], [1, 2], { operations: ['remove', 'add', 'replace'], variants: ['instruction', 'target', 'identify', 'error', 'chain'], operationVisible: true, chainSteps: 2 }, ['initial', 'medial', 'final']),
     advanced: base('manipulate-syllables', 10, [3, 4], ['mixed', 'trabadas'], [2, 3], { operations: ['remove', 'add', 'replace', 'invert'], variants: ['instruction', 'target', 'identify', 'error', 'chain'], operationVisible: false, chainSteps: 2 }, ['initial', 'medial', 'final'])
+  },
+  'order-letters': {
+    initial: base('order-letters', 5, [2], ['simple'], [1], { variants: ['order','missing','intruder','swap','memory'], distractorCount: 2, memorySeconds: 3, letterLengths: ['3-4','5-6'] }),
+    intermediate: base('order-letters', 10, [2,3], ['simple','mixed'], [1,2], { variants: ['order','missing','intruder','swap','memory'], distractorCount: 3, memorySeconds: 3, letterLengths: ['3-4','5-6','7-8'] }),
+    advanced: base('order-letters', 20, [2,3,4], ['simple','mixed','trabadas'], [1,2,3], { variants: ['order','missing','intruder','swap','memory'], distractorCount: 4, memorySeconds: 2, letterLengths: ['5-6','7-8','9+'] })
   }
 });
 
-const allowed = { complexities: ['simple', 'mixed', 'trabadas'], frequencies: [1, 2, 3], targetPositions: ['initial', 'medial', 'final'], operations: ['remove', 'add', 'replace', 'invert'], orderVariants: ['order', 'missing', 'intruder', 'correctOrder', 'memory'], manipVariants: ['instruction', 'target', 'identify', 'error', 'chain'] };
+const allowed = { complexities: ['simple', 'mixed', 'trabadas'], frequencies: [1, 2, 3], targetPositions: ['initial', 'medial', 'final'], operations: ['remove', 'add', 'replace', 'invert'], orderVariants: ['order', 'missing', 'intruder', 'correctOrder', 'memory'], letterVariants: ['order','missing','intruder','swap','memory'], letterLengths: ['3-4','5-6','7-8','9+'], manipVariants: ['instruction', 'target', 'identify', 'error', 'chain'] };
 const uniqueSorted = (values, order) => [...new Set(Array.isArray(values) ? values : [])].filter(value => order.includes(value)).sort((a, b) => order.indexOf(a) - order.indexOf(b));
 const clone = value => structuredClone(value);
 
@@ -37,14 +42,15 @@ export function applyPreset(activityId, presetId) {
 }
 
 export function createDefaultSessionConfig(activityId) { return applyPreset(activityId, 'initial'); }
+export const SESSION_CONFIG_ACTIVITY_IDS = Object.freeze(Object.keys(SESSION_PRESETS).filter(id => AVAILABLE_ACTIVITY_IDS.includes(id)));
 
 export function normalizeSessionConfig(rawConfig = {}) {
-  const activityId = ACTIVITY_IDS.includes(rawConfig.activityId) ? rawConfig.activityId : rawConfig.activityId;
-  if (rawConfig.level != null && ACTIVITY_IDS.includes(activityId) && !rawConfig.linguistic) return migrateLegacyLevelConfig(activityId, rawConfig.level, rawConfig);
-  const fallback = ACTIVITY_IDS.includes(activityId) ? createDefaultSessionConfig(activityId) : base(activityId, 5, [], [], []);
+  const activityId = rawConfig.activityId;
+  if (rawConfig.level != null && SESSION_CONFIG_ACTIVITY_IDS.includes(activityId) && !rawConfig.linguistic) return migrateLegacyLevelConfig(activityId, rawConfig.level, rawConfig);
+  const fallback = SESSION_CONFIG_ACTIVITY_IDS.includes(activityId) ? createDefaultSessionConfig(activityId) : base(activityId, 5, [], [], []);
   const linguistic = rawConfig.linguistic ?? {};
   const operations = uniqueSorted(rawConfig.activityOptions?.operations ?? fallback.activityOptions.operations ?? [], allowed.operations);
-  const variantOrder = activityId === 'order-syllables' ? allowed.orderVariants : allowed.manipVariants;
+  const variantOrder = activityId === 'order-syllables' ? allowed.orderVariants : activityId === 'order-letters' ? allowed.letterVariants : allowed.manipVariants;
   const variants = uniqueSorted(rawConfig.activityOptions?.variants ?? fallback.activityOptions.variants ?? [], variantOrder);
   return {
     activityId,
@@ -60,13 +66,13 @@ export function normalizeSessionConfig(rawConfig = {}) {
     },
     activityOptions: activityId === 'manipulate-syllables'
       ? { operations, variants, operationVisible: rawConfig.activityOptions?.operationVisible ?? fallback.activityOptions.operationVisible ?? true, chainSteps: 2 }
-      : { variants, distractorCount: [2, 3, 4].includes(Number(rawConfig.activityOptions?.distractorCount)) ? Number(rawConfig.activityOptions.distractorCount) : fallback.activityOptions.distractorCount, targetPositions: uniqueSorted(rawConfig.activityOptions?.targetPositions ?? fallback.activityOptions.targetPositions, allowed.targetPositions), memorySeconds: [2, 3, 5].includes(Number(rawConfig.activityOptions?.memorySeconds)) ? Number(rawConfig.activityOptions.memorySeconds) : fallback.activityOptions.memorySeconds }
+      : { variants, distractorCount: [1,2,3,4].includes(Number(rawConfig.activityOptions?.distractorCount)) ? Number(rawConfig.activityOptions.distractorCount) : fallback.activityOptions.distractorCount, targetPositions: uniqueSorted(rawConfig.activityOptions?.targetPositions ?? fallback.activityOptions.targetPositions, allowed.targetPositions), memorySeconds: [2, 3, 5].includes(Number(rawConfig.activityOptions?.memorySeconds)) ? Number(rawConfig.activityOptions.memorySeconds) : fallback.activityOptions.memorySeconds, ...(activityId === 'order-letters' ? { letterLengths: uniqueSorted(rawConfig.activityOptions?.letterLengths ?? fallback.activityOptions.letterLengths, allowed.letterLengths) } : {}) }
   };
 }
 
 export function validateSessionConfig(config) {
   const errors = [];
-  if (!ACTIVITY_IDS.includes(config?.activityId)) errors.push('La actividad no es válida.');
+  if (!SESSION_CONFIG_ACTIVITY_IDS.includes(config?.activityId)) errors.push('La actividad no está disponible para configurar.');
   if (!SESSION_MODES[config?.mode]) errors.push('El modo de uso no es válido.');
   if (!Number.isInteger(config?.rounds) || config.rounds < 1 || config.rounds > 100) errors.push('El número de rondas debe estar entre 1 y 100.');
   for (const key of ['syllableCounts', 'complexities', 'frequencies']) if (!config?.linguistic?.[key]?.length) errors.push(`Selecciona al menos una opción de ${key}.`);
@@ -75,6 +81,7 @@ export function validateSessionConfig(config) {
     if (!config.activityOptions?.operations?.length) errors.push('Selecciona al menos una operación.');
   }
   if (!config?.activityOptions?.variants?.length) errors.push('Selecciona al menos un tipo de reto.');
+  if (config?.activityId === 'order-letters' && !config.activityOptions?.letterLengths?.length) errors.push('Selecciona al menos una longitud de palabra.');
   return { valid: errors.length === 0, errors };
 }
 

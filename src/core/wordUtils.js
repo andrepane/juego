@@ -31,6 +31,10 @@ export function normalizeSpanish(value) {
     .replace(/[^a-záéíóúüñ]/gu, '');
 }
 
+/** Orthographic units for letter-awareness work (ch, ll and rr remain separate). */
+export const getOrthographicLetters = word => [...normalizeSpanish(word?.word ?? word?.text ?? word)];
+export const getOrthographicLength = word => getOrthographicLetters(word).length;
+
 export function getWordComplexity(word) {
   const parts = String(word?.structure ?? '').split('-').filter(Boolean);
   if (parts.some((part) => part.startsWith('CC'))) return 'trabadas';
