@@ -10,6 +10,16 @@ export const ACTIVITY_DEFINITIONS = Object.freeze({
     id: 'manipulate-syllables', title: 'Manipular sílabas', shortDescription: 'Quita, añade, cambia o invierte sílabas para construir un nuevo resultado.',
     areaId: 'syllabic-awareness', areaTitle: 'Conciencia silábica', areaDescription: 'Actividades para reconocer, ordenar y transformar las sílabas de las palabras.',
     icon: 'CA ↔ SA', status: 'available', sortOrder: 20, capabilities: CAPABILITIES
+  }),
+  'identify-rhymes': Object.freeze({
+    id: 'identify-rhymes', title: 'Identificar rimas', shortDescription: 'Encuentra palabras que terminan con sonidos parecidos.',
+    areaId: 'phonological-awareness', areaTitle: 'Conciencia fonológica', areaDescription: 'Actividades para reconocer y comparar los sonidos de las palabras.',
+    icon: 'SOL · COL', status: 'coming-soon', sortOrder: 30, capabilities: CAPABILITIES
+  }),
+  'legacy-phonemes': Object.freeze({
+    id: 'legacy-phonemes', title: 'Fonemas', shortDescription: 'Actividad interna no publicada.',
+    areaId: 'phonological-awareness', areaTitle: 'Conciencia fonológica', areaDescription: 'Actividades para reconocer y comparar los sonidos de las palabras.',
+    icon: 'F · O · N', status: 'hidden', sortOrder: 40, capabilities: CAPABILITIES
   })
 });
 
