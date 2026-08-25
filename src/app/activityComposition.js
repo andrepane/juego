@@ -8,5 +8,7 @@ import { createManipulateSyllablesController } from '../ui/activities/manipulate
 
 export const activityComposition = createActivityComposition([
   { definition: ACTIVITY_DEFINITIONS['order-syllables'], createPlugin: createOrderSyllablesPlugin, createController: createOrderSyllablesController, createConfigurator: createSessionConfigurator },
-  { definition: ACTIVITY_DEFINITIONS['manipulate-syllables'], createPlugin: createManipulateSyllablesPlugin, createController: createManipulateSyllablesController, createConfigurator: createSessionConfigurator }
+  { definition: ACTIVITY_DEFINITIONS['manipulate-syllables'], createPlugin: createManipulateSyllablesPlugin, createController: createManipulateSyllablesController, createConfigurator: createSessionConfigurator },
+  { definition: ACTIVITY_DEFINITIONS['identify-rhymes'] },
+  { definition: ACTIVITY_DEFINITIONS['legacy-phonemes'] }
 ]);

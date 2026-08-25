@@ -60,7 +60,7 @@ LEXIA separa cuatro conceptos que antes estaban reunidos en `main.js`:
 - El **controlador** representa una actividad y traduce pulsaciones, teclado y arrastre en acciones del plugin. Los dos controladores implementan el mismo contrato: `activityId`, `mount`, `openConfiguration`, `startSession`, `renderRound`, `finishSession`, `renderSummary` y `destroy`.
 - El **runtime** resuelve una composición completa mediante `activityId`, mantiene un único controlador activo y garantiza su limpieza al cambiar de actividad o volver a portada.
 
-`src/app/activityComposition.js` es la única tabla de composición. Cada entrada reúne definición, fábrica de plugin, fábrica de controlador y fábrica de configurador. Una actividad `available` se rechaza si falta cualquiera de esas piezas; una `coming-soon` puede no tener motor ni controlador porque el catálogo no permite abrirla. No hay mapas paralelos ni condiciones por identificador en `main.js`.
+`src/app/activityComposition.js` es la única tabla de composición y la fuente de las definiciones que alimentan el catálogo. Cada entrada reúne la definición y, cuando la actividad es ejecutable, las fábricas de plugin, controlador y configurador. El catálogo acepta definiciones sin motor; el runtime, en cambio, solo resuelve una actividad `available` cuando las tres fábricas son válidas. No hay mapas paralelos ni condiciones por identificador en `main.js`.
 
 La shell común proporciona navegación entre pantallas, foco en el título, progreso accesible, controles profesionales, confirmaciones de salida y finalización, y métricas comunes. Los templates de configuración, juego y resumen específicos viven junto a cada controlador y se montan bajo una raíz propia. `index.html` conserva solo portada y diálogos compartidos: es una decisión deliberada para seguir siendo un sitio estático sencillo sin acumular una pantalla completa por cada actividad futura.
 
@@ -72,7 +72,7 @@ Continúan siendo específicos el aspecto de las fichas, las acciones aceptadas,
 2. Crear un plugin que implemente el contrato del registro sin acceder al DOM.
 3. Crear un controlador con el contrato común, un template encapsulado y listeners abortables o equivalentes.
 4. Reutilizar la shell de sesión y dejar en el controlador solo la representación y traducción de interacciones específicas.
-5. Añadir exactamente una entrada a `activityComposition.js` y sus pruebas de composición, motor y controlador.
+5. Completar la entrada de `activityComposition.js` y sus pruebas de composición, motor y controlador.
 6. Marcarla `available` únicamente cuando definición, plugin, controlador, configurador y destino navegable sean válidos.
 
 ## Organización
@@ -116,11 +116,11 @@ Un plugin de actividad es el objeto que reúne la identidad pública de una acti
 - `capabilities`, con los booleanos `supportsImages`, `supportsAudio`, `supportsText` y `supportsMetrics`;
 - los métodos `start`, `submit`, `next` y `getMetrics`, además de los métodos opcionales de sesión ya descritos.
 
-Las definiciones canónicas viven en `src/exercises/activityDefinitions.js`. La factoría del motor incorpora su definición al objeto que devuelve y `main.js` registra ese objeto mediante `registry.register(...)`. El registro rechaza metadatos incompletos, métodos inválidos e identificadores duplicados. `list()` permite descubrir las actividades visibles y filtrar por estado; `listByArea()` las devuelve agrupadas por área. Ambos métodos excluyen las actividades `hidden` y ordenan por `sortOrder`.
+Las definiciones canónicas viven en `src/exercises/activityDefinitions.js`. `main.js` registra directamente las definiciones expuestas por la composición, sin instanciar plugins. El registro rechaza metadatos incompletos e identificadores duplicados. `list()` permite descubrir las actividades visibles y filtrar por estado; `listByArea()` las devuelve agrupadas por área. Ambos métodos excluyen las actividades `hidden` y ordenan por `sortOrder`.
 
-La portada se genera automáticamente desde `registry.listByArea()`: no necesita añadir HTML ni condiciones por tarjeta. Una actividad `available` abre su configurador, una `coming-soon` se presenta desactivada y una `hidden` no se renderiza. Para incorporar una futura actividad será necesario añadir su definición, devolverla desde su plugin y registrar la factoría en la composición de la aplicación.
+La portada se genera automáticamente desde `registry.listByArea()`: no necesita añadir HTML ni condiciones por tarjeta. Una actividad `available` abre su configurador si el runtime puede resolverla, una `coming-soon` se presenta desactivada y una `hidden` no se renderiza. Para incorporar una futura actividad basta con añadir su definición y su entrada de composición; no necesita un plugin ficticio mientras permanezca `coming-soon`.
 
-La composición de la aplicación valida el destino navegable antes de registrar una actividad disponible. Por eso la portada solo ofrece motores que pueden resolverse y montarse completamente.
+El runtime valida el destino ejecutable y el contrato del plugin antes de montar una actividad. El registro del catálogo permanece independiente: que una definición sea visible no obliga a que exista todavía un motor.
 
 La disponibilidad se calcula sobre palabras jugables y retos concretos antes de comenzar. En Manipular, las posiciones filtran el banco de retos: `edges` requiere ambos extremos y `full` sigue siendo una inversión completa independiente de inicial/medial/final.
 

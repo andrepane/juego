@@ -1,4 +1,11 @@
 const CONTROLLER_METHODS = ['mount', 'openConfiguration', 'startSession', 'renderRound', 'finishSession', 'renderSummary', 'destroy'];
+const PLUGIN_METHODS = ['start', 'submit', 'next', 'getMetrics'];
+
+export function validatePlugin(plugin, activityId) {
+  if (!plugin || typeof plugin !== 'object' || plugin.id !== activityId) throw new Error(`Invalid plugin for "${activityId}".`);
+  PLUGIN_METHODS.forEach(method => { if (typeof plugin[method] !== 'function') throw new Error(`Plugin "${activityId}" is missing method: ${method}`); });
+  return plugin;
+}
 
 export function validateController(controller, activityId = controller?.activityId) {
   if (!controller || typeof controller !== 'object' || controller.activityId !== activityId) throw new Error(`Invalid controller for "${activityId}".`);
@@ -12,10 +19,6 @@ export function createActivityComposition(entries) {
     const id = entry?.definition?.id;
     if (!id) throw new Error('Activity composition requires a definition with an id.');
     if (activities.has(id)) throw new Error(`Activity id already composed: ${id}`);
-    const available = entry.definition.status === 'available';
-    if (available && typeof entry.createPlugin !== 'function') throw new Error(`Available activity "${id}" requires a plugin factory.`);
-    if (available && typeof entry.createController !== 'function') throw new Error(`Available activity "${id}" requires a controller factory.`);
-    if (available && typeof entry.createConfigurator !== 'function') throw new Error(`Available activity "${id}" requires a configurator factory.`);
     activities.set(id, Object.freeze({ ...entry }));
   }
   return {
@@ -23,7 +26,10 @@ export function createActivityComposition(entries) {
     list: () => [...activities.values()],
     resolveAvailable(id) {
       const entry = activities.get(id);
-      return entry?.definition.status === 'available' && entry.createPlugin && entry.createController && entry.createConfigurator ? entry : null;
+      return entry?.definition.status === 'available'
+        && typeof entry.createPlugin === 'function'
+        && typeof entry.createController === 'function'
+        && typeof entry.createConfigurator === 'function' ? entry : null;
     }
   };
 }
@@ -35,7 +41,7 @@ export function createActivityRuntime({ composition, root, shell, dialogs }) {
     const entry = resolve(activityId);
     if (!entry) return false;
     current?.destroy();
-    const plugin = entry.createPlugin();
+    const plugin = validatePlugin(entry.createPlugin(), activityId);
     current = validateController(entry.createController({ plugin, root, shell, dialogs, createConfigurator: entry.createConfigurator }), activityId);
     current.mount(); current.openConfiguration();
     return true;

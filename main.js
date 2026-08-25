@@ -8,7 +8,7 @@ const root = document.querySelector('#app');
 const shell = createSessionShell({ root, home: 'home' });
 const registry = createExerciseRegistry();
 activityComposition.list().forEach(entry => {
-  if (activityComposition.resolveAvailable(entry.definition.id)) registry.register(entry.createPlugin());
+  registry.register(entry.definition);
 });
 
 const exitElement = document.querySelector('#exit-dialog');
