@@ -5,10 +5,7 @@
 <main id="app" class="shell">
   <section id="home" class="screen active" aria-labelledby="home-title">
     <header class="hero"><p class="brand">LEXIA</p><h1 id="home-title">Entrenamiento lingüístico, paso a paso</h1><p>Actividades para trabajar habilidades fonológicas y metalingüísticas.</p></header>
-    <div class="cards">
-      <button id="open-config" class="activity-card active-card" type="button"><span class="card-icon" aria-hidden="true">A · MI · GO</span><strong>Ordenar sílabas</strong><span>Organiza las sílabas para formar una palabra.</span><b>Disponible</b></button>
-      <button id="open-manip-config" class="activity-card active-card" type="button"><span class="card-icon" aria-hidden="true">CA ↔ SA</span><strong>Manipular sílabas</strong><span>Quita, añade, cambia o invierte sílabas para construir un nuevo resultado</span><b>Disponible</b></button>
-    </div>
+    <div id="activity-catalog"></div>
   </section>
 
   <section id="config" class="screen" aria-labelledby="config-title"><button class="back-link" data-home type="button">← Volver al inicio</button><p class="brand">LEXIA</p><h1 id="config-title" tabindex="-1">Configura Ordenar sílabas</h1><form id="config-form" class="session-config" data-activity="order-syllables"></form></section>

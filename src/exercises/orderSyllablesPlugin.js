@@ -3,6 +3,7 @@ import { resolveOrderLevel } from './orderSyllablesConfig.js';
 import { migrateLegacyLevelConfig, normalizeSessionConfig } from '../core/sessionConfig.js';
 import { buildOrderChallengePool, ORDER_VARIANTS } from './orderSyllablesVariants.js';
 import { planBalancedVariants } from '../core/challengePlanner.js';
+import { getActivityDefinition } from './activityDefinitions.js';
 
 export function ensureReorderedSyllables(syllables, random = Math.random) {
   if (!Array.isArray(syllables)) return []; if (syllables.length < 2) return [...syllables];
@@ -48,7 +49,7 @@ export function createOrderSyllablesPlugin({ random = Math.random, getWords = ge
   function skipRound() { if (s.completed) return snapshot('locked'); s.results.push(resultRecord('skipped')); s.completed = true; return snapshot('skipped'); }
   function finishSession() { s.endedEarly = true; return getMetrics(); }
   function getMetrics() { const done = s.results.filter(x => x.status !== 'skipped'); const skippedRounds = s.results.length - done.length; const byVariant = Object.fromEntries(Object.keys(ORDER_VARIANTS).map(v => [v, aggregate(done.filter(x => x.variant === v))])); return { score: done.length, roundsPlayed: done.length, plannedRounds: s.plannedRounds, completedRounds: done.length, correctRounds: done.length, skippedRounds, uncompletedRounds: Math.max(0, s.plannedRounds - s.results.length), therapistRestarts: s.therapistRestarts, endedEarly: s.endedEarly, firstTryCorrect: done.filter(x => x.firstTry).length, incorrectAttempts: s.incorrectAttempts, firstTryPercentage: done.length ? Math.round(done.filter(x => x.firstTry).length / done.length * 100) : 0, totalMovements: s.movements, totalUndoUses: s.undoUses, totalResetUses: s.resetUses, byVariant, results: structuredClone(s.results), recentWordIds: s.results.map(x => x.baseWord) }; }
-  return { id: 'order-syllables', start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState: getMetrics };
+  return { ...getActivityDefinition('order-syllables'), start, submit, next, getMetrics, restartRound, skipRound, finishSession, getSessionState: getMetrics };
 }
 function aggregate(items) { return { rounds: items.length, firstTryCorrect: items.filter(x => x.firstTry).length, incorrectAttempts: items.reduce((n, x) => n + x.incorrectAttempts, 0) }; }
 function shuffled(values, random) { const r = [...values]; for (let i = r.length - 1; i; i -= 1) { const j = Math.floor(random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }

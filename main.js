@@ -3,6 +3,7 @@ import { calculateRoundProgress, createOrderSyllablesPlugin } from './src/exerci
 import { createManipulateSyllablesPlugin } from './src/exercises/manipulateSyllablesPlugin.js';
 import { MANIPULATION_OPERATIONS } from './src/exercises/manipulateSyllablesConfig.js';
 import { createSessionConfigurator } from './src/ui/sessionConfigurator.js';
+import { bindActivityCatalog, renderActivityCatalog } from './src/ui/activityCatalog.js';
 
 const registry = createExerciseRegistry();
 const exercise = registry.register(createOrderSyllablesPlugin());
@@ -15,6 +16,13 @@ const orderConfigurator = createSessionConfigurator($('#config-form'), 'order-sy
 const manipConfigurator = createSessionConfigurator($('#manip-config-form'), 'manipulate-syllables');
 
 function show(id) { screens.forEach((screen) => { const active = screen.id === id; screen.classList.toggle('active', active); screen.setAttribute('aria-hidden', String(!active)); }); window.scrollTo(0, 0); requestAnimationFrame(() => document.querySelector(`#${id} h1`)?.focus({ preventScroll: true })); }
+const configurationScreens = new Map([['order-syllables', 'config'], ['manipulate-syllables', 'manip-config']]);
+function openActivityConfiguration(activityId) {
+  const activity = registry.get(activityId); const screenId = configurationScreens.get(activityId);
+  if (activity?.status === 'available' && screenId) show(screenId);
+}
+renderActivityCatalog($('#activity-catalog'), registry);
+bindActivityCatalog($('#activity-catalog'), openActivityConfiguration);
 function renderRound(result) {
   if (!result || result.status === 'empty' || !Array.isArray(result.pieces) || !Array.isArray(result.answer)) {
     renderEmptyState();
@@ -54,8 +62,6 @@ function apply(result) {
   if (result.status === 'incorrect') { refs.feedback.textContent = orderConfigurator.getPolicy().explicitFeedback ? result.hint : 'Revisa la consigna y prueba un cambio concreto.'; refs.feedback.className = 'feedback error'; if (orderConfigurator.getPolicy().explicitFeedback) { refs.guidance.textContent = result.hint; refs.guidance.classList.remove('hidden'); } }
   if (result.status === 'correct') { refs.feedback.textContent = '¡Muy bien! Has formado la palabra.'; refs.feedback.className = 'feedback success'; refs.revealed.textContent = result.word; refs.check.classList.add('hidden'); refs.next.classList.remove('hidden'); $('#score-label').textContent = `Al primer intento: ${exercise.getMetrics().firstTryCorrect}`; }
 }
-$('#open-config').addEventListener('click', () => show('config'));
-$('#open-manip-config').addEventListener('click', () => show('manip-config'));
 document.querySelectorAll('[data-home]').forEach((button) => button.addEventListener('click', () => show('home')));
 $('#config-form').addEventListener('submit', (event) => { event.preventDefault(); const config = orderConfigurator.getConfig(); session = { config, total: config.rounds, current: 1, round: null }; configureProfessionalBar('order', exercise, orderConfigurator.getPolicy()); show('game'); renderRound(exercise.start(config)); });
 refs.pieces.addEventListener('click', (event) => { const button = event.target.closest('[data-piece]'); if (button) apply(exercise.submit({ type: 'tap', pieceId: button.dataset.piece })); });
